@@ -69,6 +69,7 @@ async def add_moderator_id(msg: types.Message, state: FSMContext):
     await msg.answer(add_moderator_text(chat.id), reply_markup=keyboard, parse_mode='MarkdownV2')
 
 
+# /start -> 'admin_menu' -> 'add_moderator' -> user with id not found
 @admin_menu_router.callback_query(F.data != 'cancel', AdminMenu.ADD_ID_ANYWAY)
 async def add_id_anyway(callback: types.CallbackQuery, state: FSMContext):
     """ Add not valid (not found with bot.get_chat) id anyway """

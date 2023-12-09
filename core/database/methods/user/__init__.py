@@ -1,4 +1,4 @@
-from .check import check_if_moderator, check_if_admin
+from .check import check_if_moderator, check_if_admin, check_if_moderator_or_admin
 
 from .get import get_moderator, get_all_moderators, get_moderator_with_location
 

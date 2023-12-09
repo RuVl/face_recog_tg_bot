@@ -2,7 +2,6 @@ from aiogram import Router, F, types
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 
-from core.database.methods.user import check_if_admin
 from core.filters import IsAdminMessageFilter, IsAdminCallbackFilter
 from core.handlers.admin.menu import admin_menu_router
 from core.keyboards.inline import admin_start_menu, admin_menu
@@ -23,24 +22,22 @@ admin_router.callback_query.filter(
 
 @admin_router.message(CommandStart())
 async def start(msg: types.Message, state: FSMContext):
-    """ /start from user """
+    """ /start from admin """
 
     await state.set_state(AdminMenu.START)
     await msg.answer('Здравствуйте, админ 👑', reply_markup=admin_start_menu(), parse_mode='MarkdownV2')
 
 
-@admin_router.callback_query(AdminMenu.START)
+@admin_router.callback_query(F.data != 'check_face', AdminMenu.START)
 async def start_menu(callback: types.CallbackQuery, state: FSMContext):
     """ Select in start menu """
 
-    match callback.data:
-        case 'check_face':
-            await callback.answer('TODO')
-        case 'admin_menu':
-            await state.set_state(AdminMenu.ADMIN_MENU)
-            await callback.answer()
+    if callback.data == 'admin_menu':
+        await state.set_state(AdminMenu.ADMIN_MENU)
+        await callback.answer()
 
-            await callback.message.edit_text('Меню админа 👑', reply_markup=admin_menu(), parse_mode='MarkdownV2')
+        await callback.message.edit_text('Меню админа 👑', reply_markup=admin_menu(), parse_mode='MarkdownV2')
+        return
 
 
 @admin_router.callback_query(F.data == 'back', AdminMenu.ADMIN_MENU)

@@ -1,1 +1,3 @@
-from .main import IsAdminMessageFilter, IsModeratorMessageFilter, IsAdminCallbackFilter, IsModeratorCallbackFilter
+from .main import (IsAdminMessageFilter, IsAdminCallbackFilter,
+                   IsModeratorMessageFilter, IsModeratorCallbackFilter,
+                   IsAdminOrModeratorMessageFilter, IsAdminOrModeratorCallbackFilter)

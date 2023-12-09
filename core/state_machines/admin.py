@@ -3,10 +3,10 @@ from aiogram.fsm.state import StatesGroup, State
 
 class AdminMenu(StatesGroup):
     """ State machine for admin menu """
+
     START = State()  # /start
 
     ADMIN_MENU = State()  # /start -> 'admin_menu'
-    CHECK_FACE = State()  # /start -> 'check_face'
 
     ADD_MODERATOR = State()  # 'admin_menu' -> 'add_moderator'
     ADD_ID_ANYWAY = State()  # 'add_moderator' -> id not found
