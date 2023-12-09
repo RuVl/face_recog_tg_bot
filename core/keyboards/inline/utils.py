@@ -16,6 +16,9 @@ def paginate(data: list, page: int, element2button: Callable, prefix: str) -> In
         :param prefix: prefix for unique menu
     """
 
+    if len(data) == 0:
+        return InlineKeyboardBuilder()
+
     COLS = 2  # Max buttons in one row
     ROWS = 5  # Max rows
 

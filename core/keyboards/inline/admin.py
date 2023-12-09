@@ -63,7 +63,7 @@ def add_location() -> InlineKeyboardMarkup:
 
 
 async def select_location(page=0) -> InlineKeyboardMarkup:
-    """ Select location for user """
+    """ Select location for user keyboard """
 
     locations = await get_all_locations()
     builder = paginate(locations, page, location2keyboard, 'location_menu')
@@ -81,5 +81,20 @@ async def select_moderator(page=0) -> InlineKeyboardMarkup:
     builder = paginate(moderators, page, moderator2keyboard, 'moderator_list_menu')
 
     builder.row(InlineKeyboardButton(text='Назад', callback_data='back'))
+
+    return builder.as_markup()
+
+
+def edit_moderator() -> InlineKeyboardMarkup:
+    """ Actions with moderator (edit location or delete) """
+
+    builder = InlineKeyboardBuilder()
+    builder.row(
+        InlineKeyboardButton(text='Изменить локацию', callback_data='change_location_moderator')
+    ).row(
+        InlineKeyboardButton(text='Удалить', callback_data='delete_moderator')
+    ).row(
+        InlineKeyboardButton(text='Назад', callback_data='back')
+    )
 
     return builder.as_markup()
