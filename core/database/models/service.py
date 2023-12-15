@@ -23,5 +23,5 @@ class Service(Base):
     title: Mapped[str] = Column(String(255))
     date: Mapped[datetime] = Column(DateTime, default=datetime.utcnow)
 
-    client_id: Mapped[int] = Column(Integer, ForeignKey('clients.id'))
+    client_id: Mapped[int] = Column(ForeignKey('clients.id'))
     client: Mapped['Client'] = relationship('Client', back_populates='services')

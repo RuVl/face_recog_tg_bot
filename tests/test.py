@@ -4,6 +4,7 @@ from core.callback_factory import PaginatorFactory
 from core.database import engine
 from core.database.methods.location import get_all_locations
 from core.database.methods.user import check_if_admin, get_moderator, delete_moderator, get_moderator_with_location
+from core.image_hosting import send_image
 
 
 class TestConditionParser(unittest.IsolatedAsyncioTestCase):
@@ -26,8 +27,9 @@ class TestConditionParser(unittest.IsolatedAsyncioTestCase):
 		# await delete_moderator(2)
 		# await delete_moderator(1)
 		# await delete_moderator(3453)
-		user = await get_moderator_with_location(1346110354)
+		# user = await get_moderator_with_location(1346110354)
+		# print(user.location.address)
 
-		print(user.location.address)
+		# await send_image('../media/BQACAgIAAxkBAAIBLmV4dH51OLPThgZs7t2fofXdA45oAAIGOQACXufASxHBMVuZSnZJMwQ.jpg')
 
 		pass

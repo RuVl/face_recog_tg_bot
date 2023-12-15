@@ -28,7 +28,7 @@ async def start(msg: types.Message, state: FSMContext):
     await msg.answer('Здравствуйте, админ 👑', reply_markup=admin_start_menu(), parse_mode='MarkdownV2')
 
 
-@admin_router.callback_query(F.data != 'check_face', AdminMenu.START)
+@admin_router.callback_query(F.data.not_in(['check_face', 'get_by_id']), AdminMenu.START)
 async def start_menu(callback: types.CallbackQuery, state: FSMContext):
     """ Select in start menu """
 

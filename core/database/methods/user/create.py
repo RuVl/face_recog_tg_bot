@@ -6,7 +6,7 @@ from core.database.models import User
 
 async def create_or_set_moderator(telegram_id: int, location_id: int) -> bool:
     """
-        Create new moderator or add moderator rights.
+        Create a new moderator or add moderator rights.
         :return: True if user updated
     """
 

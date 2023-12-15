@@ -10,13 +10,19 @@ def cancel_keyboard(text='Отмена') -> InlineKeyboardMarkup:
     ).as_markup()
 
 
-def yes_no_cancel() -> InlineKeyboardMarkup:
-    """ Yes, no or cancel keyboard """
+def yes_no_cancel(cancel_text='Отмена') -> InlineKeyboardMarkup:
+    """
+        Yes, no or cancel keyboard.
+        If cancel_text is None won't cancel button
+    """
 
     builder = InlineKeyboardBuilder()
     builder.row(
         InlineKeyboardButton(text='Да', callback_data='yes'),
         InlineKeyboardButton(text='Нет', callback_data='no')
-    ).row(InlineKeyboardButton(text='Отмена', callback_data='cancel'))
+    )
+
+    if cancel_text is not None:
+        builder.row(InlineKeyboardButton(text=cancel_text, callback_data='cancel'))
 
     return builder.as_markup()

@@ -20,12 +20,12 @@ class Visit(Base):
 
     id: Mapped[int] = Column(Integer, primary_key=True)
 
-    name: Mapped[str] = Column(String(255))
+    name: Mapped[str] = Column(String(255), nullable=True)
     date: Mapped[datetime] = Column(DateTime, default=datetime.utcnow)
 
-    contacts: Mapped[str] = Column(String(255))
+    contacts: Mapped[str] = Column(String(255), nullable=True)
 
-    client_id: Mapped[int] = Column(Integer, ForeignKey('clients.id'))
+    client_id: Mapped[int] = Column(ForeignKey('clients.id'))
     client: Mapped['Client'] = relationship('Client', back_populates='visits')
 
     location_id: Mapped[int] = Column(ForeignKey('locations.id'))
