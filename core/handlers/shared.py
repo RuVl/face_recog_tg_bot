@@ -2,7 +2,6 @@ import logging
 import shutil
 from pathlib import Path
 
-import face_recognition
 import numpy as np
 from aiogram import Router, F, types
 from aiogram.enums import ContentType
@@ -10,16 +9,18 @@ from aiogram.filters import or_f
 from aiogram.fsm.context import FSMContext
 from aiogram.types import FSInputFile
 
-from core.config import MEDIA_DIR, LOCATION_MODEL_NAME, ENCODING_MODEL_NAME, TOLERANCE, SUPPORTED_IMAGE_TYPES, TEMP_DIR
-from core.database.methods.client import get_clients, create_client, get_client
+from core.config import MEDIA_DIR, SUPPORTED_IMAGE_TYPES
+from core.database.methods.client import create_client, get_client
 from core.database.methods.image import get_image_by_id, create_image_from_path
 from core.database.methods.service import add_client_service
 from core.database.methods.user import check_if_admin, check_if_moderator, get_tg_user_location
 from core.database.methods.visit import create_visit, update_visit_name, update_visit_contacts
+from core.database.models import Client
 from core.filters import IsAdminOrModeratorMessageFilter, IsAdminOrModeratorCallbackFilter
+from core.handlers.utils import find_faces, download_image
 from core.keyboards.inline import cancel_keyboard, admin_start_menu, moderator_start_menu, yes_no_cancel, add_visit, add_visit_info
 from core.state_machines import AdminMenu, ModeratorMenu, SharedMenu
-from core.text import face_info_text
+from core.text import face_info_text, send_me_image, cancel_previous_processing
 
 admin_moderator_router = Router()
 
@@ -43,9 +44,7 @@ async def start_menu(callback: types.CallbackQuery, state: FSMContext):
         case 'check_face':
             await state.set_state(SharedMenu.CHECK_FACE)
             await callback.answer()
-            await callback.message.edit_text('Отправьте фотографию как `документ` \(до 20мб\)\.\n'
-                                             'Допустимые форматы: `.jpg, .heic`',
-                                             reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2')
+            await callback.message.edit_text(send_me_image(), reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2')
         case 'get_by_id':
             await state.set_state(SharedMenu.GET_BY_ID)
             await callback.answer()
@@ -75,109 +74,42 @@ async def check_face(msg: types.Message, state: FSMContext):
 
     # Face recognition is still running
     if (await state.get_data()).get('check_face'):
-        await msg.answer('Отмените предыдущую обработку прежде чем отправлять новую фотографию\. 🤔',
+        await msg.answer(cancel_previous_processing(),
                          reply_markup=cancel_keyboard('Отменить'), parse_mode='MarkdownV2')
         return
 
-    # File is so big
-    if msg.document.file_size > 20 * 1024 * 1024:
-        await msg.reply('Файл слишком большой\! 😖', reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2')
-        return
-
-    # Unsupported file type
-    if msg.document.mime_type not in SUPPORTED_IMAGE_TYPES.keys():
-        await msg.reply('Файл неподдерживаемого формата\! 😩', reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2')
-        return
-
     await state.update_data(check_face=True)
-    message = await msg.answer('Скачивание файла\. 📄', reply_markup=cancel_keyboard(), parse_mode='MarkdownV2')
+    document_path, message = await download_image(msg, state, 'check_face')
 
-    # Download image
-    filename = msg.document.file_id + SUPPORTED_IMAGE_TYPES[msg.document.mime_type]
-    document_path = Path(TEMP_DIR / filename)
-    await msg.bot.download(msg.document, document_path)
-
-    # Was cancel
-    if not (await state.get_data()).get('check_face'):
-        return
-
-    # Is the image downloaded?
-    if not document_path.exists():
-        await message.edit_text('Загрузка файла не удалась\. 😭\n'
-                                'Попробуйте ещё раз или обратитесь к админам\.', reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2')
+    if document_path is None:
         return
 
     await state.update_data(client_photo_path=document_path)
     await message.edit_text('✅ Файл скачан\.\n'
                             'Поиск лица на фотографии\. 🔎', reply_markup=cancel_keyboard(), parse_mode='MarkdownV2')
 
-    # Prepare and recognize faces on image
-    image = face_recognition.load_image_file(document_path)
+    result = await find_faces(document_path, message, state, 'check_face')
 
-    # Check if image can be sent to telegram
-    w, h, _ = image.shape
-    if max(w, h) / min(w, h) > 20:
-        await message.edit_text('Соотношение высоты к ширине не должно превышать 20\.',
-                                reply_markup=cancel_keyboard(), parse_mode='MarkdownV2')
+    if result is None:
         return
 
-    face_locations = face_recognition.face_locations(image, model=LOCATION_MODEL_NAME)
-
-    # Was cancel
-    if not (await state.get_data()).get('check_face'):
-        return
-
-    # Faces not found
-    if len(face_locations) == 0:
-        await message.edit_text('🚫 Ни одного лица не обнаружено\!', reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2')
-        return
-
-    # Found more than one face
-    if len(face_locations) > 1:
-        await message.edit_text(f'Обнаружено {len(face_locations)} лиц\. 🤔\n'
-                                'На фотографии должно быть только 1 лицо\!', reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2')
-        return
-
-    await message.edit_text('Обнаружено 1 лицо\. 👌\n'
-                            'Проверяю на наличие такого же лица в базе данных\.', reply_markup=cancel_keyboard(), parse_mode='MarkdownV2')
-
-    # Get face encodings
-    face_encodings = face_recognition.face_encodings(image, face_locations, model=ENCODING_MODEL_NAME)
-
-    # Get known faces encoding
-    clients = await get_clients()
-    known_faces = [client.face_encoding for client in clients]
-
-    # Compare encodings
-    results = face_recognition.compare_faces(known_faces, face_encodings[0], tolerance=TOLERANCE)
-
-    # Was cancel
-    if not (await state.get_data()).get('check_face'):
-        return
-
-    # Extract matches
-    indexes = np.nonzero(results)[0]  # axe=0
-    if len(indexes) == 0:  # Clients with this face aren't found. Add a new client?
-        await state.update_data(check_face=False, face_encoding=face_encodings[0])
+    if isinstance(result, np.ndarray):
+        await state.update_data(check_face=False, face_encoding=result)
         await state.set_state(SharedMenu.ADD_NEW_FACE)
 
         await message.edit_text('Нет в базе\! 🤯\n'
                                 'Добавить такого человека?', reply_markup=yes_no_cancel(None), parse_mode='MarkdownV2')
         return
 
-    # Found more than one matches
-    if len(indexes) > 1:
-        await message.edit_text(f'Найдено {len(indexes)} таких же лиц\. 🤔\n'
-                                'Отправлено на решение админам\.', reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2')
-        # TODO send to admins
+    if not isinstance(result, Client):
+        logging.warning("Type checking aren't successful!")
+        await message.edit_text('Что\-то пошло не так, повторите попытку\.', reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2')
         return
 
-    # Get matched client
-    client = clients[indexes[0]]
-    profile_picture = await get_image_by_id(client.profile_picture_id)
+    profile_picture = await get_image_by_id(result.profile_picture_id)
 
     # TODO save telegram_image_id for this image
-    await state.update_data(check_face=False, client_id=client.id, client_photo_path=profile_picture.path)
+    await state.update_data(check_face=False, client_id=result.id, client_photo_path=profile_picture.path)
     await state.set_state(SharedMenu.SHOW_FACE_INFO)
 
     await show_client(message, state, add_visit())

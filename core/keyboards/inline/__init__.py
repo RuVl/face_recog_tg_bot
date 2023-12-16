@@ -6,4 +6,6 @@ from .moderator import moderator_start_menu
 
 from .shared import add_visit, add_visit_info
 
+from .anyone import anyone_start_menu
+
 from .other import cancel_keyboard, yes_no_cancel

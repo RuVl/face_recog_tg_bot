@@ -11,7 +11,7 @@ def admin_start_menu() -> InlineKeyboardMarkup:
     """ Answer on /start inline keyboard for admin """
 
     builder = InlineKeyboardBuilder()
-    (builder.row(
+    builder.row(
         InlineKeyboardButton(
             text='Проверить в базе',
             callback_data='check_face'
@@ -26,7 +26,7 @@ def admin_start_menu() -> InlineKeyboardMarkup:
             text='Меню админа',
             callback_data='admin_menu'
         )
-    ))
+    )
 
     return builder.as_markup()
 

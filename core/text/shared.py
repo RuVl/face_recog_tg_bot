@@ -4,6 +4,15 @@ from core.database.methods.visit import get_visit_with_location, get_client_visi
 from core.database.models import Visit, Service, Image
 
 
+def send_me_image() -> str:
+    return ('Отправьте фотографию как `документ` \(до 20мб\)\.\n'
+            'Допустимые форматы: `.jpg, .heic`')
+
+
+def cancel_previous_processing() -> str:
+    return 'Отмените предыдущую обработку прежде чем отправлять новую фотографию\. 🤔'
+
+
 async def face_info_text(
         client_id: int | str,
         images: list[Image] = None,
@@ -59,7 +68,7 @@ async def face_info_text(
     if name_and_date_str != '':
         result += ('*Имя и дата:*\n'
                    f'{name_and_date_str}\n\n')
-    
+
     # All services
     services_list = [
         f'{service.title} \({service.date:%H:%M %d\.%m\.%Y}\)'
