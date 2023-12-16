@@ -8,7 +8,7 @@ from . import Base
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from . import Client
+    from . import Visit
 
 
 class Service(Base):
@@ -23,5 +23,5 @@ class Service(Base):
     title: Mapped[str] = Column(String(255))
     date: Mapped[datetime] = Column(DateTime, default=datetime.utcnow)
 
-    client_id: Mapped[int] = Column(ForeignKey('clients.id'))
-    client: Mapped['Client'] = relationship('Client', back_populates='services')
+    visit_id: Mapped[int] = Column(ForeignKey('visits.id'))
+    visit: Mapped['Visit'] = relationship('Visit', back_populates='services')

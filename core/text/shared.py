@@ -6,20 +6,26 @@ from core.database.models import Visit, Service, Image
 
 def send_me_image() -> str:
     return ('Отправьте фотографию как `документ` \(до 20мб\)\.\n'
-            'Допустимые форматы: `.jpg, .heic`')
+            'Допустимые форматы: `.jpg`, `.heic`')
 
 
 def cancel_previous_processing() -> str:
     return 'Отмените предыдущую обработку прежде чем отправлять новую фотографию\. 🤔'
 
 
+def file_downloaded() -> str:
+    return ('✅ Файл скачан\.\n'
+            'Поиск лица на фотографии\. 🔎')
+
+
 async def face_info_text(
         client_id: int | str,
+        *,
         images: list[Image] = None,
         visits: list[Visit] = None,
         services: list[Service] = None
 ) -> str:
-    """ Returns info about client """
+    """ Returns text info about client """
 
     if images is None:
         images = await get_client_images(client_id)

@@ -6,7 +6,7 @@ from core.image_hosting import send_image
 from core.misc import str2int
 
 
-async def create_image_from_path(path: str | Path, client_id: int | str = None) -> Image:
+async def create_image_from_path(path: str | Path, visit_id: int | str = None) -> Image:
     """ Load the path to photo hosting and create an image entry """
 
     data = await send_image(path)
@@ -18,9 +18,9 @@ async def create_image_from_path(path: str | Path, client_id: int | str = None) 
     async with session_maker() as session:
         image = Image(path=path, url=url, hosting_data=data)
 
-        if client_id is not None:
-            client_id, = str2int(client_id)
-            image.client_id = client_id
+        if visit_id is not None:
+            visit_id, = str2int(visit_id)
+            image.visit_id = visit_id
 
         session.add(image)
         await session.commit()

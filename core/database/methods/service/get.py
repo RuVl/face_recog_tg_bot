@@ -1,13 +1,13 @@
-from sqlalchemy import select
+from sqlalchemy import select, and_
 
 from core.database import session_maker
-from core.database.models import Service
+from core.database.models import Service, Visit
 
 
 async def get_client_services(client_id: int) -> list[Service]:
     """ Returns a list of services by given client_id """
 
     async with session_maker() as session:
-        query = select(Service).where(Service.client_id == client_id)
+        query = select(Service).where(and_(Service.visit_id == Visit.id, Visit.client_id == client_id))
         result = await session.scalars(query)
         return result.all()

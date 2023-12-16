@@ -4,7 +4,7 @@ from .admin import (admin_menu, admin_start_menu,
 
 from .moderator import moderator_start_menu
 
-from .shared import add_visit, add_visit_info
+from .shared import add_visit_kb, add_visit_info_kb
 
 from .anyone import anyone_start_menu
 

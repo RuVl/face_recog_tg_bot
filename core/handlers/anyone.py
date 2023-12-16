@@ -1,5 +1,4 @@
 import logging
-from pathlib import Path
 
 import numpy as np
 from aiogram import Router, F, types
@@ -10,10 +9,10 @@ from aiogram.types import FSInputFile
 
 from core.database.methods.image import get_image_by_id
 from core.database.models import Client
-from core.handlers.utils import download_image, find_faces
+from core.handlers.utils import download_image, find_faces, clear_temp
 from core.keyboards.inline import anyone_start_menu, cancel_keyboard
 from core.state_machines import AnyoneMenu
-from core.text import send_me_image, cancel_previous_processing
+from core.text import send_me_image, cancel_previous_processing, file_downloaded
 
 anyone_router = Router()
 
@@ -42,7 +41,7 @@ async def start_menu(callback: types.CallbackQuery, state: FSMContext):
 # '/start' -> 'check_if_exist' -> document provided
 @anyone_router.message(AnyoneMenu.CHECK_IF_EXIST, F.content_type == ContentType.DOCUMENT)
 async def check_if_exist_face(msg: types.Message, state: FSMContext):
-    """ Validate and download the provided file. Find a face on it and check if exists in db. """
+    """ Validate and download the provided file. Find a face on it and check if it exists in db. """
 
     # Face recognition is still running
     if (await state.get_data()).get('check_if_exist'):
@@ -56,9 +55,8 @@ async def check_if_exist_face(msg: types.Message, state: FSMContext):
     if document_path is None:
         return
 
-    await state.update_data(client_photo_path=document_path)
-    await message.edit_text('✅ Файл скачан\.\n'
-                            'Поиск лица на фотографии\. 🔎', reply_markup=cancel_keyboard(), parse_mode='MarkdownV2')
+    await state.update_data(temp_photo_path=document_path)
+    await message.edit_text(file_downloaded(), reply_markup=cancel_keyboard(), parse_mode='MarkdownV2')
 
     result = await find_faces(document_path, message, state, 'check_if_exist')
 
@@ -81,29 +79,19 @@ async def check_if_exist_face(msg: types.Message, state: FSMContext):
     await state.update_data(check_face=False)
 
     await message.answer_photo(
-        FSInputFile(profile_picture), caption=f'*id в базе:* `{result.id}`',
+        FSInputFile(profile_picture.path), caption=f'*id в базе:* `{result.id}`',
         reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2'
     )
-
     await message.delete()
 
 
 # /start -> 'check_if_exist' -> document provided -> 'cancel'
 @anyone_router.callback_query(F.data == 'cancel', AnyoneMenu.CHECK_IF_EXIST)
 async def cancel_check_face(callback: types.CallbackQuery, state: FSMContext):
-    state_data = await state.get_data()
+    """ Return to the main menu """
 
-    img_path = Path(state_data.get('client_photo_path') or '')
-    if img_path.exists() and img_path.is_file():
-        img_path.unlink()
+    await clear_temp(state)
 
-    await state.clear()
     await state.set_state(AnyoneMenu.START)
-
     await callback.answer()
-
-    if callback.message.text is not None:
-        await callback.message.edit_text('Здравствуйте, выберите действие\.', reply_markup=anyone_start_menu(), parse_mode='MarkdownV2')
-    elif callback.message.caption is not None:
-        await callback.message.answer('Здравствуйте, выберите действие\.', reply_markup=anyone_start_menu(), parse_mode='MarkdownV2')
-        await callback.message.delete()
+    await callback.message.answer('Здравствуйте, выберите действие\.', reply_markup=anyone_start_menu(), parse_mode='MarkdownV2')

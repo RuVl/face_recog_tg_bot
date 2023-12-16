@@ -6,7 +6,7 @@ from aiogram import types
 from aiogram.fsm.context import FSMContext
 
 from core.config import SUPPORTED_IMAGE_TYPES, TEMP_DIR, LOCATION_MODEL_NAME, ENCODING_MODEL_NAME, TOLERANCE
-from core.database.methods.client import get_clients
+from core.database.methods.client import get_all_clients
 from core.database.models import Client
 from core.keyboards.inline import cancel_keyboard
 
@@ -28,7 +28,9 @@ async def download_image(msg: types.Message, state: FSMContext, cancel_flag: str
 
     # Download image
     filename = msg.document.file_id + SUPPORTED_IMAGE_TYPES[msg.document.mime_type]
-    document_path = Path(TEMP_DIR / filename)
+    document_path = TEMP_DIR / filename
+
+    TEMP_DIR.mkdir(exist_ok=True)
     await msg.bot.download(msg.document, document_path)
 
     # Was cancel
@@ -81,7 +83,7 @@ async def find_faces(image_path: Path, message: types.Message, state: FSMContext
     face_encodings = face_recognition.face_encodings(image, face_locations, model=ENCODING_MODEL_NAME)
 
     # Get known faces encoding
-    clients = await get_clients()
+    clients = await get_all_clients()
     known_faces = [client.face_encoding for client in clients]
 
     # Compare encodings
@@ -104,3 +106,17 @@ async def find_faces(image_path: Path, message: types.Message, state: FSMContext
         return
 
     return clients[indexes[0]]  # Return matched client
+
+
+async def clear_temp(state: FSMContext):
+    """ Delete file in temp_photo_path and clear state """
+
+    state_data = await state.get_data()
+    document_path = state_data.get('temp_photo_path')
+
+    if document_path is not None:
+        document_path = Path(document_path)
+        if document_path.exists():
+            document_path.unlink()
+
+    await state.clear()

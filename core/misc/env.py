@@ -8,6 +8,7 @@ load_dotenv()
 
 class TgKeys:
     TOKEN: Final[str] = environ.get('TG_API_TOKEN')
+    ADMIN_GROUP_ID: Final[int] = int(environ.get('ADMIN_GROUP_ID'))
 
 
 class DBKeys:

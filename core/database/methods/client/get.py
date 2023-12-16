@@ -5,7 +5,7 @@ from core.database.models import Client
 from core.misc import str2int
 
 
-async def get_clients() -> list[Client]:
+async def get_all_clients() -> list[Client]:
     async with session_maker() as session:
         query = select(Client)
         result = await session.scalars(query)

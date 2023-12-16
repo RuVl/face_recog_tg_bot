@@ -15,5 +15,5 @@ class SharedMenu(StatesGroup):
     ADD_VISIT_NAME = State()  # 'add_visit' -> 'add_name'
     ADD_VISIT_CONTACTS = State()  # 'add_visit' -> 'add_contact'
 
-    ADD_CLIENT_SERVICE = State()  # 'add_visit' -> 'add_service'
-    ADD_CLIENT_IMAGES = State()  # 'add_visit' -> 'add_images'
+    ADD_VISIT_SERVICE = State()  # 'add_visit' -> 'add_service'
+    ADD_VISIT_IMAGES = State()  # 'add_visit' -> 'add_images'
