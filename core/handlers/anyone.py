@@ -90,6 +90,7 @@ async def check_if_exist_face(msg: types.Message, state: FSMContext):
 @anyone_router.callback_query(F.data == 'cancel', AnyoneMenu.CHECK_IF_EXIST)
 async def cancel_check_face(callback: types.CallbackQuery, state: FSMContext):
     await state.update_data(check_if_exist=False)
+    await state.set_state(AnyoneMenu.START)
     await callback.answer()
 
     if callback.message.text is not None:
