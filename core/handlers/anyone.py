@@ -1,4 +1,5 @@
 import logging
+from pathlib import Path
 
 import numpy as np
 from aiogram import Router, F, types
@@ -55,6 +56,7 @@ async def check_if_exist_face(msg: types.Message, state: FSMContext):
     if document_path is None:
         return
 
+    await state.update_data(client_photo_path=document_path)
     await message.edit_text('✅ Файл скачан\.\n'
                             'Поиск лица на фотографии\. 🔎', reply_markup=cancel_keyboard(), parse_mode='MarkdownV2')
 
@@ -89,8 +91,15 @@ async def check_if_exist_face(msg: types.Message, state: FSMContext):
 # /start -> 'check_if_exist' -> document provided -> 'cancel'
 @anyone_router.callback_query(F.data == 'cancel', AnyoneMenu.CHECK_IF_EXIST)
 async def cancel_check_face(callback: types.CallbackQuery, state: FSMContext):
-    await state.update_data(check_if_exist=False)
+    state_data = await state.get_data()
+
+    img_path = Path(state_data.get('client_photo_path') or '')
+    if img_path.exists() and img_path.is_file():
+        img_path.unlink()
+
+    await state.clear()
     await state.set_state(AnyoneMenu.START)
+
     await callback.answer()
 
     if callback.message.text is not None:
