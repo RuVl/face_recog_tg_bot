@@ -90,4 +90,10 @@ async def check_if_exist_face(msg: types.Message, state: FSMContext):
 @anyone_router.callback_query(F.data == 'cancel', AnyoneMenu.CHECK_IF_EXIST)
 async def cancel_check_face(callback: types.CallbackQuery, state: FSMContext):
     await state.update_data(check_if_exist=False)
-    await callback.message.answer('Здравствуйте, выберите действие\.', reply_markup=anyone_start_menu(), parse_mode='MarkdownV2')
+    await callback.answer()
+
+    if callback.message.text is not None:
+        await callback.message.edit_text('Здравствуйте, выберите действие\.', reply_markup=anyone_start_menu(), parse_mode='MarkdownV2')
+    elif callback.message.caption is not None:
+        await callback.message.answer('Здравствуйте, выберите действие\.', reply_markup=anyone_start_menu(), parse_mode='MarkdownV2')
+        await callback.message.delete()
