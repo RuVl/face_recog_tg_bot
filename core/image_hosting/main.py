@@ -1,3 +1,4 @@
+import logging
 from typing import Any
 
 import aiohttp
@@ -18,6 +19,7 @@ async def send_image(path: str | Path) -> dict[str, Any]:
     params = dict(key=ImHostKeys.API_TOKEN)
     post_data = aiohttp.FormData()
 
+    logging.info(f"Sending image {path} to photo hosting")
     async with aiohttp.ClientSession() as session:
         with open(path, 'rb') as f:
             post_data.add_field('image', f)

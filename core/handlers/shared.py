@@ -12,7 +12,7 @@ from aiogram.types import FSInputFile
 from core.config import MEDIA_DIR, SUPPORTED_IMAGE_TYPES
 from core.database.methods.client import create_client, get_client, client_have_visit
 from core.database.methods.image import get_image_by_id, create_image_from_path
-from core.database.methods.service import add_client_service
+from core.database.methods.service import create_visit_service
 from core.database.methods.user import check_if_admin, check_if_moderator, get_tg_user_location
 from core.database.methods.visit import create_visit, update_visit_name, update_visit_contacts
 from core.database.models import Client
@@ -335,7 +335,7 @@ async def add_visit_service(msg: types.Message, state: FSMContext):
     state_data = await state.get_data()
     visit_id = state_data.get('visit_id')
 
-    await add_client_service(visit_id, title)
+    await create_visit_service(visit_id, title)
     await state.set_state(SharedMenu.ADD_VISIT)
 
     await show_client(msg, state, add_visit_info_kb())

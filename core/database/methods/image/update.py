@@ -5,12 +5,12 @@ from core.database.models import Image
 from core.misc import str2int
 
 
-async def set_client2image(image_id: int | str, client_id: int | str):
-    """ Set Image.client_id to an image """
+async def set_visit2image(image_id: int | str, visit_id: int | str):
+    """ Set Image.visit_id to an image """
 
-    image_id, client_id = str2int(image_id, client_id)
+    image_id, visit_id = str2int(image_id, visit_id)
 
     async with session_maker() as session:
-        query = update(Image).where(Image.id == image_id).values(client_id=client_id)
+        query = update(Image).where(Image.id == image_id).values(visit_id=visit_id)
         await session.execute(query)
         await session.commit()

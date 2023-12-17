@@ -4,7 +4,7 @@ from core.misc import str2int
 from datetime import datetime
 
 
-async def add_client_service(visit_id: int | str, title: str) -> Service:
+async def create_visit_service(visit_id: int | str, title: str) -> Service:
     """ Adds a new client's service and returns it """
 
     visit_id, = str2int(visit_id)
