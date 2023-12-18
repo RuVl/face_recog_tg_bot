@@ -11,12 +11,16 @@ from . import FOLDERS_INFO, get_or_create_location_address, find_faces, create_v
 
 
 async def fill_database():
+    start_time = datetime.now()
+
     for folder_info in FOLDERS_INFO:
         folder = Path(folder_info.get('folder'))
 
         if not folder.exists() or not folder.is_dir():
             logging.error(f"Wrong folder: {folder_info.get('folder')} in FOLDERS_INFO!")
             continue
+
+        logging.info(f"Working with folder: {folder}")
 
         location = await get_or_create_location_address(folder_info.get('location_address'))
 
@@ -35,7 +39,7 @@ async def fill_database():
                     continue
 
                 if isinstance(result, Client):
-                    logging.warning(f"Found more than one face matches: {img_path}")
+                    logging.warning(f"Found face match: {img_path}")
                     continue
 
                 logging.info(f'Copy image to media directory: {img_path}')
@@ -50,3 +54,5 @@ async def fill_database():
                 client = await create_client(face_path, result)
                 visit = await create_visit_with_date(client.id, location.id, date)
                 await create_visit_service(visit.id, service_title)
+
+    logging.info(f'Обработано за {(datetime.now() - start_time).seconds} sec')

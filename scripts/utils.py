@@ -1,4 +1,5 @@
 import logging
+import shutil
 from datetime import datetime
 from pathlib import Path
 
@@ -34,6 +35,9 @@ async def find_faces(image_path: Path) -> Client | np.ndarray | None:
 
     # Faces not found
     if len(face_locations) == 0:
+        tmp = image_path.parent / 'not_found'
+        tmp.mkdir(exist_ok=True)
+        shutil.copy2(image_path, tmp)
         logging.error(f"Face not found: {image_path}")
         return
 

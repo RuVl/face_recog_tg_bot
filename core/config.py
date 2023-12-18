@@ -9,7 +9,7 @@ SUPPORTED_IMAGE_TYPES = {
 }
 
 LOCATION_MODEL_NAME = 'hog'  # hog is less accurate, but faster on CPU, cnn is a more accurate (GPU/CUDA accelerated)
-ENCODING_MODEL_NAME = 'small'  # small or large (small returns only 5 points but faster)
+ENCODING_MODEL_NAME = 'large'  # small or large (small returns only 5 points but faster)
 TOLERANCE = 0.6  # tolerance for comparing faces
 
 if not MEDIA_DIR.exists():
