@@ -4,7 +4,8 @@ from pathlib import Path
 
 import face_recognition
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageFile
+from pillow_heif import register_heif_opener
 from sqlalchemy import select
 
 from core.config import LOCATION_MODEL_NAME, ENCODING_MODEL_NAME, TOLERANCE

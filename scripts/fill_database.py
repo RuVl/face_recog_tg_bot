@@ -1,4 +1,3 @@
-import asyncio
 import logging
 import shutil
 from datetime import datetime
@@ -51,7 +50,3 @@ async def fill_database():
                 client = await create_client(face_path, result)
                 visit = await create_visit_with_date(client.id, location.id, date)
                 await create_visit_service(visit.id, service_title)
-
-
-if __name__ == '__main__':
-    asyncio.run(fill_database())
