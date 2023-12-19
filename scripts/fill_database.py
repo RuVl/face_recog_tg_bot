@@ -35,7 +35,6 @@ async def fill_database():
 
                 result = await find_faces(img_path)
                 if result is None:
-                    logging.info(f"No result for: {img_path}")
                     continue
 
                 if isinstance(result, Client):

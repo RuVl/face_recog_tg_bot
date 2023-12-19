@@ -9,7 +9,7 @@ from PIL import Image, ImageFile
 from pillow_heif import register_heif_opener
 from sqlalchemy import select
 
-from core.config import LOCATION_MODEL_NAME, ENCODING_MODEL_NAME, TOLERANCE
+from core.config import LOCATION_MODEL_NAME, ENCODING_MODEL_NAME, TOLERANCE, MAX_RESOLUTION, UP_SAMPLE_TIMES
 from core.database import session_maker
 from core.database.methods.client import get_all_clients
 from core.database.models import Location, Client, Visit
@@ -24,14 +24,18 @@ async def find_faces(image_path: Path) -> Client | np.ndarray | None:
     """ Validate image and find face on it """
 
     # Prepare and recognize faces on image
-    image = face_recognition.load_image_file(image_path)
+    image = Image.open(image_path)
+    image.thumbnail(size=MAX_RESOLUTION)
+    image = np.array(image)
+
+    # image = face_recognition.load_image_file(image_path)
 
     # Check if image can be sent to telegram
     w, h, _ = image.shape
     if max(w, h) / min(w, h) > 20:
         logging.warning(f"Face do not matches to telegram standard: {image_path}")
 
-    face_locations = face_recognition.face_locations(image, model=LOCATION_MODEL_NAME)
+    face_locations = face_recognition.face_locations(image, model=LOCATION_MODEL_NAME, number_of_times_to_upsample=UP_SAMPLE_TIMES)
 
     # Faces not found
     if len(face_locations) == 0:

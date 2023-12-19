@@ -2,10 +2,11 @@ from pathlib import Path
 
 import face_recognition
 import numpy as np
+from PIL import Image
 from aiogram import types
 from aiogram.fsm.context import FSMContext
 
-from core.config import SUPPORTED_IMAGE_TYPES, TEMP_DIR, LOCATION_MODEL_NAME, ENCODING_MODEL_NAME, TOLERANCE
+from core.config import SUPPORTED_IMAGE_TYPES, TEMP_DIR, LOCATION_MODEL_NAME, ENCODING_MODEL_NAME, TOLERANCE, MAX_RESOLUTION, UP_SAMPLE_TIMES
 from core.database.methods.client import get_all_clients
 from core.database.models import Client
 from core.keyboards.inline import cancel_keyboard
@@ -50,7 +51,9 @@ async def find_faces(image_path: Path, message: types.Message, state: FSMContext
     """ Validate image and find face on it """
 
     # Prepare and recognize faces on image
-    image = face_recognition.load_image_file(image_path)
+    image = Image.open(image_path)
+    image.thumbnail(size=MAX_RESOLUTION)
+    image = np.array(image)
 
     # Check if image can be sent to telegram
     w, h, _ = image.shape
@@ -59,7 +62,7 @@ async def find_faces(image_path: Path, message: types.Message, state: FSMContext
                                 reply_markup=cancel_keyboard(), parse_mode='MarkdownV2')
         return
 
-    face_locations = face_recognition.face_locations(image, model=LOCATION_MODEL_NAME)
+    face_locations = face_recognition.face_locations(image, model=LOCATION_MODEL_NAME, number_of_times_to_upsample=UP_SAMPLE_TIMES)
 
     # Was cancel
     if not (await state.get_data()).get(cancel_flag):
