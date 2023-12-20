@@ -1,4 +1,3 @@
-import logging
 import shutil
 from datetime import datetime
 from pathlib import Path
@@ -21,7 +20,7 @@ register_heif_opener()
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 
-async def find_faces(image_path: Path) -> Client | np.ndarray | None:
+async def find_faces(image_path: Path) -> Client | np.ndarray | str:
     """ Validate image and find face on it """
 
     # Prepare and recognize faces on image
@@ -44,12 +43,12 @@ async def find_faces(image_path: Path) -> Client | np.ndarray | None:
         tmp.mkdir(exist_ok=True)
         shutil.copy2(image_path, tmp)
         rootLogger.error(f"Face not found: {image_path}")
-        return
+        return 'face not found'
 
     # Found more than one face
     if len(face_locations) > 1:
-        rootLogger.error(f"Found more than one face: {image_path}")
-        return
+        rootLogger.error(f"Found {len(face_locations)} faces: {image_path}")
+        return f'found {len(face_locations)} faces'
 
     # Get face encodings
     face_encodings = face_recognition.face_encodings(image, face_locations, model=ENCODING_MODEL_NAME)
@@ -70,7 +69,7 @@ async def find_faces(image_path: Path) -> Client | np.ndarray | None:
     if len(indexes) > 1:
         clients_id = list(clients[i].id for i in indexes)
         rootLogger.warning(f"Found {len(indexes)} face matches: {image_path} ({clients_id})")
-        return
+        return f'found {len(indexes)} face matches ({clients_id})'
 
     return clients[indexes[0]]  # Return matched client
 

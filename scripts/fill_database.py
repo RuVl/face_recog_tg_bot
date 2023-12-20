@@ -1,4 +1,4 @@
-import logging
+import json
 import shutil
 from datetime import datetime
 from pathlib import Path
@@ -23,36 +23,54 @@ async def fill_database():
 
         rootLogger.info(f"Working with folder: {folder}")
 
-        location = await get_or_create_location_address(folder_info.get('location_address'))
+        processed_file = folder / 'processed.json'
+        if not processed_file.exists():
+            processed_file.write_text('{}')
+        else:
+            rootLogger.info(f'Found processed file!')
 
-        service_title = folder_info.get('service_title')
-        if service_title is None:
-            rootLogger.error(f"Service title cannot be empty!")
-            continue
+        with processed_file.open('r', encoding='utf-8') as f:
+            processed: dict[str, str] = json.load(f)  # [img_path] = 'status'
 
-        for img_type in SUPPORTED_IMAGE_TYPES.values():
-            for img_path in folder.glob(f'*{img_type}'):
-                rootLogger.info(f'Processing image: {img_path}')
+        try:
+            location = await get_or_create_location_address(folder_info.get('location_address'))
 
-                result = await find_faces(img_path)
-                if result is None:
-                    continue
+            service_title = folder_info.get('service_title')
+            if service_title is None:
+                rootLogger.error(f"Service title cannot be empty!")
+                continue
 
-                if isinstance(result, Client):
-                    rootLogger.warning(f"Found face match: {img_path}")
-                    continue
+            for img_type in SUPPORTED_IMAGE_TYPES.values():
+                for img_path in folder.glob(f'*{img_type}'):
+                    if processed.get(img_path) is not None:
+                        continue
 
-                rootLogger.info(f'Copy image to media directory: {img_path}')
-                face_path = shutil.copy2(img_path, MEDIA_DIR)
+                    rootLogger.info(f'Processing image: {img_path}')
 
-                date = get_date_taken(img_path)
-                if date is None:
-                    date = datetime.utcnow()
+                    result = await find_faces(img_path)
+                    if isinstance(result, str):
+                        processed[img_path] = result
+                        continue
 
-                client = await create_client(face_path, result)
-                visit = await create_visit_with_date(client.id, location.id, date)
-                await create_visit_service(visit.id, service_title)
+                    if isinstance(result, Client):
+                        processed[img_path] = 'face exists'
+                        rootLogger.warning(f"Found face match: {img_path}")
+                        continue
 
-                rootLogger.info(f'Created client ({client.id}) with: {face_path}')
+                    rootLogger.info(f'Copy image to media directory: {img_path}')
+                    face_path = shutil.copy2(img_path, MEDIA_DIR)
 
-    rootLogger.info(f'Обработано за {(datetime.now() - start_time).seconds} sec')
+                    date = get_date_taken(img_path)
+                    if date is None:
+                        date = datetime.utcnow()
+
+                    client = await create_client(face_path, result)
+                    visit = await create_visit_with_date(client.id, location.id, date)
+                    await create_visit_service(visit.id, service_title)
+
+                    rootLogger.info(f'Created client ({client.id}) with: {face_path}')
+        finally:
+            with processed_file.open('w', encoding='utf-8') as f:
+                json.dump(processed, f, ensure_ascii=True, indent=4)
+
+    rootLogger.info(f'Processed in {(datetime.now() - start_time).seconds} sec')
