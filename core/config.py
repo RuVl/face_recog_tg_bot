@@ -11,7 +11,7 @@ SUPPORTED_IMAGE_TYPES = {
 LOCATION_MODEL_NAME = 'cnn'  # hog is less accurate, but faster on CPU, cnn is a more accurate (GPU/CUDA accelerated)
 ENCODING_MODEL_NAME = 'large'  # small or large (small returns only 5 points but faster)
 TOLERANCE = 0.6  # tolerance for comparing faces
-UP_SAMPLE_TIMES = 5
+UP_SAMPLE_TIMES = 1
 
 MAX_RESOLUTION = (2048, 2048)
 

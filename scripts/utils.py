@@ -14,6 +14,7 @@ from core.database import session_maker
 from core.database.methods.client import get_all_clients
 from core.database.models import Location, Client, Visit
 from core.misc import str2int
+from scripts.logger import rootLogger
 
 register_heif_opener()
 
@@ -25,16 +26,16 @@ async def find_faces(image_path: Path) -> Client | np.ndarray | None:
 
     # Prepare and recognize faces on image
     image = Image.open(image_path)
+
+    # Check if image can be sent to telegram
+    w, h = image.size
+    if max(w, h) / min(w, h) > 20:
+        rootLogger.warning(f"Face do not matches to telegram standard: {image_path}")
+
     image.thumbnail(size=MAX_RESOLUTION)
     image = np.array(image)
 
     # image = face_recognition.load_image_file(image_path)
-
-    # Check if image can be sent to telegram
-    w, h, _ = image.shape
-    if max(w, h) / min(w, h) > 20:
-        logging.warning(f"Face do not matches to telegram standard: {image_path}")
-
     face_locations = face_recognition.face_locations(image, model=LOCATION_MODEL_NAME, number_of_times_to_upsample=UP_SAMPLE_TIMES)
 
     # Faces not found
@@ -42,12 +43,12 @@ async def find_faces(image_path: Path) -> Client | np.ndarray | None:
         tmp = image_path.parent / 'not_found'
         tmp.mkdir(exist_ok=True)
         shutil.copy2(image_path, tmp)
-        logging.error(f"Face not found: {image_path}")
+        rootLogger.error(f"Face not found: {image_path}")
         return
 
     # Found more than one face
     if len(face_locations) > 1:
-        logging.error(f"Found more than one face: {image_path}")
+        rootLogger.error(f"Found more than one face: {image_path}")
         return
 
     # Get face encodings
@@ -67,7 +68,8 @@ async def find_faces(image_path: Path) -> Client | np.ndarray | None:
 
     # Found more than one matches
     if len(indexes) > 1:
-        logging.warning(f"Found {len(indexes)} face matches: {image_path}")
+        clients_id = list(clients[i].id for i in indexes)
+        rootLogger.warning(f"Found {len(indexes)} face matches: {image_path} ({clients_id})")
         return
 
     return clients[indexes[0]]  # Return matched client
