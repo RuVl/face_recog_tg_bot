@@ -40,25 +40,39 @@ async def fill_database():
                 rootLogger.error(f"Service title cannot be empty!")
                 continue
 
+            last_num = 1
             for img_type in SUPPORTED_IMAGE_TYPES.values():
-                for img_path in folder.glob(f'*{img_type}'):
-                    if processed.get(img_path) is not None:
+                for i, img_path in enumerate(folder.glob(f'*{img_type}')):
+                    i_path = str(img_path)
+
+                    if i % 100 == 0:
+                        rootLogger.info(f'Processed {i} images in folder: {folder}. Dump data...')
+                        with processed_file.open('w', encoding='utf-8') as f:
+                            json.dump(processed, f, ensure_ascii=True, indent=4)
+
+                    if processed.get(i_path) is not None:
                         continue
 
                     rootLogger.info(f'Processing image: {img_path}')
 
                     result = await find_faces(img_path)
                     if isinstance(result, str):
-                        processed[img_path] = result
+                        processed[i_path] = result
                         continue
 
                     if isinstance(result, Client):
-                        processed[img_path] = 'face exists'
+                        processed[i_path] = 'face exists'
                         rootLogger.warning(f"Found face match: {img_path}")
                         continue
 
                     rootLogger.info(f'Copy image to media directory: {img_path}')
-                    face_path = shutil.copy2(img_path, MEDIA_DIR)
+
+                    save_path = MEDIA_DIR / f'{last_num}{img_path.suffix}'
+                    while save_path.exists():
+                        last_num += 1
+                        save_path = MEDIA_DIR / f'{last_num}{img_path.suffix}'
+
+                    face_path = shutil.copy2(img_path, save_path)
 
                     date = get_date_taken(img_path)
                     if date is None:
@@ -69,6 +83,7 @@ async def fill_database():
                     await create_visit_service(visit.id, service_title)
 
                     rootLogger.info(f'Created client ({client.id}) with: {face_path}')
+                    processed[i_path] = 'success'
         finally:
             with processed_file.open('w', encoding='utf-8') as f:
                 json.dump(processed, f, ensure_ascii=True, indent=4)
