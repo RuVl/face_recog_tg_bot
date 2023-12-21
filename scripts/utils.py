@@ -51,7 +51,7 @@ async def find_faces(image_path: Path) -> Client | np.ndarray | str:
         return f'found {len(face_locations)} faces'
 
     # Get face encodings
-    face_encodings = face_recognition.face_encodings(image, face_locations, model=ENCODING_MODEL_NAME)
+    face_encodings = face_recognition.face_encodings(image, face_locations, model=ENCODING_MODEL_NAME, num_jitters=UP_SAMPLE_TIMES)
 
     # Get known faces encoding
     clients = await get_all_clients()

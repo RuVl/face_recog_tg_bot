@@ -83,7 +83,7 @@ async def find_faces(image_path: Path, message: types.Message, state: FSMContext
                             'Проверяю на наличие такого же лица в базе данных\.', reply_markup=cancel_keyboard(), parse_mode='MarkdownV2')
 
     # Get face encodings
-    face_encodings = face_recognition.face_encodings(image, face_locations, model=ENCODING_MODEL_NAME)
+    face_encodings = face_recognition.face_encodings(image, face_locations, model=ENCODING_MODEL_NAME, num_jitters=UP_SAMPLE_TIMES)
 
     # Get known faces encoding
     clients = await get_all_clients()
