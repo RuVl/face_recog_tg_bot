@@ -1,6 +1,10 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
+from core.database.models import Client
+from core.keyboards.inline.utils import paginate
+from core.misc import client2keyboard
+
 
 def add_visit_kb(was_added=False) -> InlineKeyboardMarkup:
     """ Text for add a visit or edit-existed visit """
@@ -31,5 +35,16 @@ def add_visit_info_kb() -> InlineKeyboardMarkup:
     ).row(
         InlineKeyboardButton(text='Назад', callback_data='cancel')
     )
+
+    return builder.as_markup()
+
+
+def select_clients_kb(clients: list[Client], page=0, **kwargs) -> InlineKeyboardMarkup:
+    """ Select the client from a list of clients """
+
+    builder = paginate(clients, page, client2keyboard, 'clients_choosing', **kwargs)
+
+    builder.row(InlineKeyboardButton(text='Добавить нового', callback_data='add_new_client'))
+    builder.row(InlineKeyboardButton(text='Назад', callback_data='cancel'))
 
     return builder.as_markup()

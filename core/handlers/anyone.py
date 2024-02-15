@@ -6,10 +6,10 @@ from aiogram.enums import ContentType
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.types import FSInputFile
+from cancel_token import CancellationToken
 
 from core.database.methods.image import get_image_by_id
-from core.database.models import Client
-from core.handlers.utils import download_image, find_faces, clear_temp
+from core.handlers.utils import download_image, find_faces, clear_temp_image
 from core.keyboards.inline import anyone_start_menu, cancel_keyboard
 from core.state_machines import AnyoneMenu
 from core.text import send_me_image, cancel_previous_processing, file_downloaded
@@ -43,46 +43,63 @@ async def start_menu(callback: types.CallbackQuery, state: FSMContext):
 async def check_if_exist_face(msg: types.Message, state: FSMContext):
     """ Validate and download the provided file. Find a face on it and check if it exists in db. """
 
+    state_data = await state.get_data()
+    check_face_token: CancellationToken = state_data.get('check_face_token')
+
     # Face recognition is still running
-    if (await state.get_data()).get('check_if_exist'):
+    if check_face_token is not None and not check_face_token.completed:
         await msg.answer(cancel_previous_processing(),
                          reply_markup=cancel_keyboard('Отменить'), parse_mode='MarkdownV2')
         return
 
-    await state.update_data(check_if_exist=True)
-    document_path, message = await download_image(msg, state, 'check_if_exist')
+    # cancel to stop, completed if exited
+    check_face_token = CancellationToken()
+    await state.update_data(check_face_token=check_face_token)  # set token to not None
 
-    if document_path is None:
+    # Download image from the message
+    image_path, message = await download_image(msg, check_face_token)
+    if check_face_token.completed or image_path is None:
         return
 
-    await state.update_data(temp_photo_path=document_path)
-    await message.edit_text(file_downloaded(), reply_markup=cancel_keyboard(), parse_mode='MarkdownV2')
+    await state.update_data(temp_image_path=image_path)
+    await message.edit_text(file_downloaded(),
+                            reply_markup=cancel_keyboard(), parse_mode='MarkdownV2')
 
-    result = await find_faces(document_path, message, state, 'check_if_exist')
+    results = await find_faces(image_path, message, check_face_token)
 
-    if result is None:
+    if check_face_token.completed or results is None:
         return
 
-    if isinstance(result, np.ndarray):
-        await state.update_data(check_if_exist=False)
-        await message.edit_text('Нет в базе\!', reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2')
+    if isinstance(results, np.ndarray):
+        await message.edit_text('Нет в базе\!',
+                                reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2')
         return
 
-    if not isinstance(result, Client):
+    if not isinstance(results, list):
         logging.warning("Type checking aren't successful!")
-        await message.edit_text('Что\-то пошло не так, повторите попытку\.', reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2')
+        await message.edit_text('Что\-то пошло не так, повторите попытку\.',
+                                reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2')
         return
 
-    profile_picture = await get_image_by_id(result.profile_picture_id)
+    if len(results) == 1:
+        result = results[0]
 
-    # TODO save telegram_image_id for this image
-    await state.update_data(check_face=False)
+        # TODO save telegram_image_id for this image
+        profile_picture = await get_image_by_id(result.profile_picture_id)
 
-    await message.answer_photo(
-        FSInputFile(profile_picture.path), caption=f'*id в базе:* `{result.id}`',
-        reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2'
-    )
-    await message.delete()
+        await message.answer_photo(
+            FSInputFile(profile_picture.path), caption=f'*id в базе:* `{result.id}`',
+            reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2'
+        )
+        await message.delete()
+    else:
+        await message.edit_text(
+            'Найдено более одного совпадения в базе данных\.\n'
+            'В целях конфиденциальности мы не можем показать результаты 😟',
+            reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2'
+        )
+
+    check_face_token.complete()
 
 
 # /start -> 'check_if_exist' -> document provided -> 'cancel'
@@ -90,8 +107,8 @@ async def check_if_exist_face(msg: types.Message, state: FSMContext):
 async def cancel_check_face(callback: types.CallbackQuery, state: FSMContext):
     """ Return to the main menu """
 
-    await clear_temp(state)
-
+    await clear_temp_image(state)
     await state.set_state(AnyoneMenu.START)
+
     await callback.answer()
     await callback.message.answer('Здравствуйте, выберите действие\.', reply_markup=anyone_start_menu(), parse_mode='MarkdownV2')

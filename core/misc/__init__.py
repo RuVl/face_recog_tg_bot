@@ -1,3 +1,3 @@
 from .env import TgKeys, DBKeys
 
-from .utils import location2keyboard, moderator2keyboard, str2int
+from .utils import location2keyboard, moderator2keyboard, client2keyboard, str2int

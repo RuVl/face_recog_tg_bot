@@ -7,20 +7,20 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from core.callback_factory import PaginatorFactory
 
 
-def paginate(data: list, page: int, element2button: Callable, prefix: str) -> InlineKeyboardBuilder:
+def paginate(data: list, page: int, element2button: Callable, prefix: str, **kwargs) -> InlineKeyboardBuilder:
     """
         Create pages by inline buttons from data.
-        :param data: list of data to split by page.
-        :param page: current page.
-        :param element2button: adapter data to InlineKeyboardButton.
-        :param prefix: prefix for unique menu
+        :param data: List of data to split by page.
+        :param page: Current page.
+        :param element2button: Adapter data to InlineKeyboardButton.
+        :param prefix: Prefix for a unique menu's change page buttons
     """
 
     if len(data) == 0:
         return InlineKeyboardBuilder()
 
-    COLS = 2  # Max buttons in one row
-    ROWS = 5  # Max rows
+    COLS = kwargs.get('cols', 2)  # Max buttons in one row
+    ROWS = kwargs.get('rows', 5)  # Max rows
 
     ON_PAGE = COLS * ROWS  # Buttons on one page
 

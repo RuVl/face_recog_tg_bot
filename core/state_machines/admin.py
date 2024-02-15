@@ -2,7 +2,7 @@ from aiogram.fsm.state import StatesGroup, State
 
 
 class AdminMenu(StatesGroup):
-    """ State machine for admin menu """
+    """ State machine for an admin menu """
 
     START = State()  # /start
 

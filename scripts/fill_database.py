@@ -67,10 +67,12 @@ async def fill_database():
 
                     rootLogger.info(f'Copy image to media directory: {img_path}')
 
-                    save_path = MEDIA_DIR / f'{last_num}{img_path.suffix}'
+                    save_path = MEDIA_DIR / f'{last_num}{img_path.suffix.lower()}'
                     while save_path.exists():
                         last_num += 1
-                        save_path = MEDIA_DIR / f'{last_num}{img_path.suffix}'
+                        save_path = MEDIA_DIR / f'{last_num}{img_path.suffix.lower()}'
+
+                    last_num += 1
 
                     face_path = shutil.copy2(img_path, save_path)
 

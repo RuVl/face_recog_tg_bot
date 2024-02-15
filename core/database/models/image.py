@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import Column, JSON, String, Integer, ForeignKey
 from sqlalchemy.orm import Mapped, relationship
@@ -28,4 +28,4 @@ class Image(Base):
     hosting_data: Mapped[dict] = Column(JSON, nullable=True)
 
     visit_id: Mapped[int] = Column(ForeignKey('visits.id'), nullable=True)
-    visit: Mapped['Visit'] = relationship('Visit', back_populates='images')
+    visit: Mapped[Optional['Visit']] = relationship('Visit', back_populates='images')

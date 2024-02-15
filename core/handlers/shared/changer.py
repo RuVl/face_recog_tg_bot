@@ -1,191 +1,23 @@
 import logging
-import shutil
 from pathlib import Path
 
-import numpy as np
-from aiogram import Router, F, types, Bot
+from aiogram import types, F, Bot
 from aiogram.enums import ContentType
 from aiogram.filters import or_f
 from aiogram.fsm.context import FSMContext
-from aiogram.types import FSInputFile
 
-from core.config import MEDIA_DIR, SUPPORTED_IMAGE_TYPES
-from core.database.methods.client import create_client, get_client, client_have_visit
-from core.database.methods.image import get_image_by_id, create_image_from_path
+from core.config import SUPPORTED_IMAGE_TYPES, MEDIA_DIR
+from core.database.methods.client import client_have_visit
+from core.database.methods.image import create_image_from_path
 from core.database.methods.service import create_visit_service
-from core.database.methods.user import check_if_admin, check_if_moderator, get_tg_user_location
+from core.database.methods.user import get_tg_user_location
 from core.database.methods.visit import create_visit, update_visit_name, update_visit_contacts
-from core.database.models import Client
-from core.filters import IsAdminOrModeratorMessageFilter, IsAdminOrModeratorCallbackFilter
-from core.handlers.utils import find_faces, download_image, clear_temp
-from core.keyboards.inline import cancel_keyboard, admin_start_menu, moderator_start_menu, yes_no_cancel, add_visit_kb, add_visit_info_kb
+from core.handlers import admin_moderator_router
+from core.handlers.shared import show_client
+from core.keyboards.inline import add_visit_info_kb, cancel_keyboard, add_visit_kb
 from core.misc import TgKeys
-from core.state_machines import AdminMenu, ModeratorMenu, SharedMenu
-from core.text import face_info_text, send_me_image, cancel_previous_processing, file_downloaded, created_visit, exit_visit, adding_name, \
-    adding_contacts, adding_services, adding_photos
-
-admin_moderator_router = Router()
-
-admin_moderator_router.message.filter(
-    F.chat.type == 'private',
-    IsAdminOrModeratorMessageFilter()
-)
-admin_moderator_router.callback_query.filter(
-    IsAdminOrModeratorCallbackFilter()
-)
-
-
-# /start -> 'check_face'
-@admin_moderator_router.callback_query(F.data.in_(['check_face', 'get_by_id']), or_f(
-    AdminMenu.START, ModeratorMenu.START
-))
-async def start_menu(callback: types.CallbackQuery, state: FSMContext):
-    """ Branches after /start """
-
-    match callback.data:
-        case 'check_face':
-            await state.set_state(SharedMenu.CHECK_FACE)
-            await callback.answer()
-            await callback.message.edit_text(send_me_image(), reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2')
-        case 'get_by_id':
-            await state.set_state(SharedMenu.GET_BY_ID)
-            await callback.answer()
-            await callback.message.edit_text('Отправьте мне `id` клиента в базе данных',
-                                             reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2')
-
-
-async def show_client(msg: types.Message, state: FSMContext, reply_markup: types.InlineKeyboardMarkup):
-    """ Show the client (photo with caption and buttons). Needs client_id and client_photo_path in state data """
-
-    state_data = await state.get_data()
-
-    client_id = state_data.get('client_id')
-    face_path = state_data.get('client_photo_path')
-
-    text = await face_info_text(client_id)
-    await msg.answer_photo(
-        FSInputFile(face_path), caption=text,
-        reply_markup=reply_markup, parse_mode='MarkdownV2'
-    )
-
-
-# /start -> 'check_face' -> document provided
-@admin_moderator_router.message(SharedMenu.CHECK_FACE, F.content_type == ContentType.DOCUMENT)
-async def check_face(msg: types.Message, state: FSMContext):
-    """ Validate and download the provided file. Find a face on it and compare with others. """
-
-    # Face recognition is still running
-    if (await state.get_data()).get('check_face'):
-        await msg.answer(cancel_previous_processing(),
-                         reply_markup=cancel_keyboard('Отменить'), parse_mode='MarkdownV2')
-        return
-
-    await state.update_data(check_face=True)
-    document_path, message = await download_image(msg, state, 'check_face')
-
-    if document_path is None:
-        return
-
-    await state.update_data(temp_photo_path=document_path)
-    await message.edit_text(file_downloaded(), reply_markup=cancel_keyboard(), parse_mode='MarkdownV2')
-
-    result = await find_faces(document_path, message, state, 'check_face')
-
-    if result is None:
-        return
-
-    if isinstance(result, np.ndarray):
-        await state.update_data(check_face=False, face_encoding=result)
-        await state.set_state(SharedMenu.ADD_NEW_FACE)
-
-        await message.edit_text('Нет в базе\! 🤯\n'
-                                'Добавить такого человека?', reply_markup=yes_no_cancel(None), parse_mode='MarkdownV2')
-        return
-
-    if not isinstance(result, Client):
-        logging.warning("Type checking aren't successful!")
-        await message.edit_text('Что\-то пошло не так, повторите попытку\.', reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2')
-        return
-
-    profile_picture = await get_image_by_id(result.profile_picture_id)
-
-    # TODO save telegram_image_id for this image
-    await state.update_data(check_face=False, client_id=result.id, client_photo_path=profile_picture.path)
-    await state.set_state(SharedMenu.SHOW_FACE_INFO)
-
-    await show_client(message, state, add_visit_kb())
-    await message.delete()
-
-
-@admin_moderator_router.message(SharedMenu.GET_BY_ID)
-async def get_by_id(msg: types.Message, state: FSMContext):
-    try:
-        client_id = int(msg.text)
-    except ValueError:
-        await msg.reply('Должен быть числом\!', reply_markup=cancel_keyboard(), parse_mode='MarkdownV2')
-        return
-
-    client = await get_client(client_id)
-    if client is None:
-        await msg.answer('Не найден\!', reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2')
-        return
-
-    profile_picture = await get_image_by_id(client.profile_picture_id)
-
-    # TODO save telegram_image_id for this image
-    await state.update_data(client_id=client.id, client_photo_path=profile_picture.path)
-    await state.set_state(SharedMenu.SHOW_FACE_INFO)
-
-    await show_client(msg, state, add_visit_kb())
-
-
-async def return2start_menu(callback: types.CallbackQuery, state: FSMContext):
-    """ Returns user to moderator or admin menu (or nothing if user neither admin nor moderator) """
-
-    await clear_temp(state)
-
-    if await check_if_admin(callback.from_user.id):
-        await state.set_state(AdminMenu.START)
-        await callback.answer()
-        await callback.message.answer('Здравствуйте, админ 👑', reply_markup=admin_start_menu(), parse_mode='MarkdownV2')
-    elif await check_if_moderator(callback.from_user.id):
-        await state.set_state(ModeratorMenu.START)
-        await callback.answer()
-        await callback.message.answer('Здравствуйте, модератор 💼', reply_markup=moderator_start_menu(), parse_mode='MarkdownV2')
-
-
-# /start -> 'check_face' -> document provided -> 'cancel'
-@admin_moderator_router.callback_query(F.data == 'cancel', or_f(
-    SharedMenu.CHECK_FACE, SharedMenu.GET_BY_ID, SharedMenu.SHOW_FACE_INFO
-))
-async def cancel_check_face(callback: types.CallbackQuery, state: FSMContext):
-    await state.update_data(check_face=False)
-    await return2start_menu(callback, state)
-
-
-# /start -> 'check_face' -> document provided -> face not found
-@admin_moderator_router.callback_query(SharedMenu.ADD_NEW_FACE)
-async def add_new_face(callback: types.CallbackQuery, state: FSMContext):
-    if callback.data == 'no':
-        await return2start_menu(callback, state)
-        return
-
-    if callback.data == 'yes':
-        state_data = await state.get_data()
-
-        face_path_temp = state_data.get('temp_photo_path')
-        face_path = shutil.copy2(face_path_temp, MEDIA_DIR)
-
-        face_encoding = state_data.get('face_encoding')
-
-        client = await create_client(face_path, face_encoding)
-
-        await state.set_state(SharedMenu.SHOW_FACE_INFO)
-        await callback.answer('Клиент добавлен в базу данных!')
-        await state.update_data(client_id=client.id, client_photo_path=face_path)
-
-        await show_client(callback.message, state, add_visit_kb())
-        await callback.message.delete()
+from core.state_machines import SharedMenu
+from core.text import exit_visit, adding_name, adding_contacts, adding_services, adding_photos, face_info_text, created_visit
 
 
 # /start -> 'check_face' -> face found

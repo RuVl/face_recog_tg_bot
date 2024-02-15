@@ -1,1 +1,1 @@
-from .paginatorfactory import PaginatorFactory
+from .factories import PaginatorFactory
