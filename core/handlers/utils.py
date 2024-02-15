@@ -27,12 +27,14 @@ async def download_image(msg: types.Message, cancellation_token: CancellationTok
     if msg.document.file_size > 20 * 1024 * 1024:
         message = await msg.reply('Файл слишком большой\! 😖',
                                   reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2')
+        cancellation_token.complete()
         return None, message
 
     # Unsupported file type
     if msg.document.mime_type not in SUPPORTED_IMAGE_TYPES.keys():
         message = await msg.reply('Файл неподдерживаемого формата\! 😩',
                                   reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2')
+        cancellation_token.complete()
         return None, message
 
     message = await msg.answer('Скачивание файла\. 📄',
@@ -56,7 +58,6 @@ async def download_image(msg: types.Message, cancellation_token: CancellationTok
                                 'Попробуйте ещё раз или обратитесь к админам\.',
                                 reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2')
         cancellation_token.complete()
-
         return None, message
 
     # Check if the task canceled
@@ -101,11 +102,11 @@ async def find_faces(image_path: Path, msg: types.Message, cancellation_token: C
 
         Find faces on an image and check matches in the database.
         If no faces are found or faces more than 1, it returns None and completes the cancellation token.
-        If found matches in the database, it returns a list of Clients.
-        If no matches are found, it returns np.ndarray.
+        If found matches in the database, it returns a list of Clients, np.ndarray.
+        If no matches are found, it returns None, np.ndarray.
     """
 
-    embeddings = DeepFace.represent(image_path, model_name=MODEL, detector_backend=BACKEND, enforce_detection=False)
+    embeddings = DeepFace.represent(str(image_path), model_name=MODEL, detector_backend=BACKEND, enforce_detection=False)
 
     if cancellation_token.cancelled:
         return None, None

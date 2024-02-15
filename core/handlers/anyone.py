@@ -112,3 +112,4 @@ async def cancel_check_face(callback: types.CallbackQuery, state: FSMContext):
 
     await callback.answer()
     await callback.message.answer('Здравствуйте, выберите действие\.', reply_markup=anyone_start_menu(), parse_mode='MarkdownV2')
+    await callback.message.delete()
