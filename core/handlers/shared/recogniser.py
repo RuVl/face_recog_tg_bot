@@ -70,12 +70,12 @@ async def check_face(msg: types.Message, state: FSMContext):
         return
 
     if len(clients) == 1:  # Found 1 face
-        result = clients[0]
+        client = clients[0]
 
         # TODO save telegram_image_id for this image
-        profile_picture = await get_image_by_id(result.profile_picture_id)
+        profile_picture = await get_image_by_id(client.profile_picture_id)
 
-        await state.update_data(client_id=result.id, client_photo_path=profile_picture.path)
+        await state.update_data(client_id=client.id, client_photo_path=profile_picture.path)
         await state.set_state(SharedMenu.SHOW_FACE_INFO)
 
         await show_client(message, state, add_visit_kb())

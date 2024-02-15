@@ -65,34 +65,35 @@ async def check_if_exist_face(msg: types.Message, state: FSMContext):
     await message.edit_text(file_downloaded(),
                             reply_markup=cancel_keyboard(), parse_mode='MarkdownV2')
 
-    results = await find_faces(image_path, message, check_face_token)
+    clients, encoding = await find_faces(image_path, message, check_face_token)
 
-    if check_face_token.completed or results is None:
+    if check_face_token.completed:
         return
 
-    if isinstance(results, np.ndarray):
+    if encoding is None:
+        await message.edit_text('Распознавание лиц не удалось, повторите попытку\.',
+                                reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2')
+        return
+
+    await state.update_data(face_encoding=encoding)
+
+    if clients is None:
         await message.edit_text('Нет в базе\!',
                                 reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2')
         return
 
-    if not isinstance(results, list):
-        logging.warning("Type checking aren't successful!")
-        await message.edit_text('Что\-то пошло не так, повторите попытку\.',
-                                reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2')
-        return
-
-    if len(results) == 1:
-        result = results[0]
+    if len(clients) == 1:  # Found 1 face
+        client = clients[0]
 
         # TODO save telegram_image_id for this image
-        profile_picture = await get_image_by_id(result.profile_picture_id)
+        profile_picture = await get_image_by_id(client.profile_picture_id)
 
         await message.answer_photo(
-            FSInputFile(profile_picture.path), caption=f'*id в базе:* `{result.id}`',
+            FSInputFile(profile_picture.path), caption=f'*id в базе:* `{client.id}`',
             reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2'
         )
         await message.delete()
-    else:
+    else:  # Found more than one face
         await message.edit_text(
             'Найдено более одного совпадения в базе данных\.\n'
             'В целях конфиденциальности мы не можем показать результаты 😟',
