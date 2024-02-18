@@ -33,6 +33,8 @@ async def fill_database():
             processed: dict[str, str] = json.load(f)  # [img_path] = 'status'
 
         try:
+            td = tempfile.TemporaryDirectory()
+
             location = await get_or_create_location_address(folder_info.get('location_address'))
 
             service_title = folder_info.get('service_title')
@@ -43,50 +45,51 @@ async def fill_database():
             last_num = 1
             for img_type in SUPPORTED_IMAGE_TYPES.values():
                 for i, img_path in enumerate(folder.glob(f'*{img_type}')):
+                    i_path = str(img_path)
+                    img_path_temp = shutil.copy2(i_path, td)
 
-                    with tempfile.TemporaryDirectory() as td:
-                        i_path = shutil.copy2(str(img_path), td)
+                    if i % 100 == 0:
+                        rootLogger.info(f'Processed {i} images in folder: {folder}. Dump data...')
+                        with processed_file.open('w', encoding='utf-8') as f:
+                            json.dump(processed, f, ensure_ascii=True, indent=4)
 
-                        if i % 100 == 0:
-                            rootLogger.info(f'Processed {i} images in folder: {folder}. Dump data...')
-                            with processed_file.open('w', encoding='utf-8') as f:
-                                json.dump(processed, f, ensure_ascii=True, indent=4)
+                    if processed.get(i_path) is not None:
+                        continue
 
-                        if processed.get(i_path) is not None:
-                            continue
+                    rootLogger.info(f'Processing image: {img_path}')
 
-                        rootLogger.info(f'Processing image: {img_path}')
+                    clients, face = await find_faces(img_path_temp)
+                    if face is None:
+                        processed[i_path] = f'found 0 or >1 faces'
+                        continue
 
-                        clients, face = await find_faces(img_path)
-                        if face is None:
-                            processed[i_path] = f'found 0 or >1 faces'
-                            continue
+                    if clients is not None:
+                        clients_id = [client.id for client in clients]
+                        rootLogger.warning(f'Face on {img_path} similar with: {clients_id}')
+                        processed[i_path] = f'found {len(clients)} similar'
+                        continue
 
-                        if clients is not None:
-                            clients_id = [client.id for client in clients]
-                            rootLogger.warning(f'Face on {img_path} similar with: {clients_id}')
-                            processed[i_path] = f'found {len(clients)} similar'
-                            continue
+                    rootLogger.info(f'Copy image to media directory: {img_path}')
 
-                        rootLogger.info(f'Copy image to media directory: {img_path}')
-
-                        save_path = MEDIA_DIR / f'{last_num}{img_path.suffix.lower()}'
-                        while save_path.exists():
-                            last_num += 1
-                            save_path = MEDIA_DIR / f'{last_num}{img_path.suffix.lower()}'
-
+                    save_path = MEDIA_DIR / f'{last_num}{img_path.suffix.lower()}'
+                    while save_path.exists():
                         last_num += 1
+                        save_path = MEDIA_DIR / f'{last_num}{img_path.suffix.lower()}'
 
-                        face_path = shutil.copy2(img_path, save_path)
-                        date = get_date_taken(img_path) or datetime.utcnow()
+                    last_num += 1
 
-                        client = await create_client(face_path, face)
-                        visit = await create_visit_with_date(client.id, location.id, date)
-                        await create_visit_service(visit.id, service_title)
+                    face_path = shutil.copy2(img_path, save_path)
+                    date = get_date_taken(img_path) or datetime.utcnow()
 
-                        rootLogger.info(f'Created client ({client.id}) with: {face_path}')
-                        processed[i_path] = 'success'
+                    client = await create_client(face_path, face)
+                    visit = await create_visit_with_date(client.id, location.id, date)
+                    await create_visit_service(visit.id, service_title)
+
+                    rootLogger.info(f'Created client ({client.id}) with: {face_path}')
+                    processed[i_path] = 'success'
         finally:
+            td.cleanup()
+
             with processed_file.open('w', encoding='utf-8') as f:
                 json.dump(processed, f, ensure_ascii=True, indent=4)
 
