@@ -94,7 +94,7 @@ async def download_image(msg: types.Message, cancellation_token: CancellationTok
     return document_path, message
 
 
-async def find_faces(image_path: Path, msg: types.Message, cancellation_token: CancellationToken) -> tuple[list[Client] | None, np.ndarray | None]:
+async def find_faces(image_path: Path, msg: types.Message, cancellation_token: CancellationToken) -> tuple[list[Client] | None, dict | None]:
     """
         :param image_path: path to image
         :param msg: the editable message

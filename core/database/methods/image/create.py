@@ -9,11 +9,11 @@ from core.misc import str2int
 async def create_image_from_path(path: str | Path, visit_id: int | str = None) -> Image:
     """ Load the path to photo hosting and create an image entry """
 
-    data = await send_image(path)
-    url = data.get('url')
-
     if isinstance(path, Path):
         path = str(path)
+
+    data = await send_image(path)
+    url = data.get('url')
 
     async with session_maker() as session:
         image = Image(path=path, url=url, hosting_data=data)

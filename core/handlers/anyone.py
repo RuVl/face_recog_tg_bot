@@ -1,6 +1,3 @@
-import logging
-
-import numpy as np
 from aiogram import Router, F, types
 from aiogram.enums import ContentType
 from aiogram.filters import CommandStart

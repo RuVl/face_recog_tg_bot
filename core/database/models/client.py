@@ -1,5 +1,5 @@
 import numpy as np
-from sqlalchemy import Integer, Column, PickleType, ForeignKey
+from sqlalchemy import Integer, Column, ForeignKey, JSON
 from sqlalchemy.orm import Mapped, relationship
 
 from . import Base, Visit, Image
@@ -20,6 +20,6 @@ class Client(Base):
     profile_picture_id: Mapped[int] = Column(ForeignKey('images.id'), nullable=False)
     profile_picture: Mapped['Image'] = relationship('Image')
 
-    face_encoding: Mapped[np.ndarray] = Column(PickleType, nullable=False)
+    face_encoding: Mapped[np.ndarray] = Column(JSON, nullable=False)
 
     visits: Mapped[list['Visit']] = relationship('Visit', back_populates='client')

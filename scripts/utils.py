@@ -1,16 +1,17 @@
-import shutil
 from datetime import datetime
 from pathlib import Path
 
 import numpy as np
 from PIL import Image, ImageFile
+from deepface import DeepFace
 from pillow_heif import register_heif_opener
 from sqlalchemy import select
 
-from core.config import LOCATION_MODEL_NAME, ENCODING_MODEL_NAME, TOLERANCE, MAX_RESOLUTION, UP_SAMPLE_TIMES
+from core.config import BACKEND, MODEL
 from core.database import session_maker
 from core.database.methods.client import get_all_clients
-from core.database.models import Location, Client, Visit
+from core.database.models import Location, Visit, Client
+from core.face_recognition.main import compare_faces
 from core.misc import str2int
 from scripts.logger import rootLogger
 
@@ -19,58 +20,34 @@ register_heif_opener()
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 
-async def find_faces(image_path: Path) -> Client | np.ndarray | str:
-    """ Validate image and find face on it """
+async def find_faces(image_path: Path) -> tuple[list[Client] | None, dict | None]:
+    embeddings = DeepFace.represent(str(image_path), model_name=MODEL, detector_backend=BACKEND, enforce_detection=False)
 
-    # Prepare and recognize faces on image
-    image = Image.open(image_path)
+    if len(embeddings) > 1:
+        rootLogger.error(f'Found {len(embeddings)} faces on {image_path}')
+        return None, None
 
-    # Check if image can be sent to telegram
-    w, h = image.size
-    if max(w, h) / min(w, h) > 20:
-        rootLogger.warning(f"Face do not matches to telegram standard: {image_path}")
+    if len(embeddings) == 0:
+        rootLogger.error(f'No faces found on {image_path}')
+        return None, None
 
-    image.thumbnail(size=MAX_RESOLUTION)
-    image = np.array(image)
-
-    # image = face_recognition.load_image_file(image_path)
-    face_locations = face_recognition.face_locations(image, model=LOCATION_MODEL_NAME, number_of_times_to_upsample=UP_SAMPLE_TIMES)
-
-    # Faces not found
-    if len(face_locations) == 0:
-        tmp = image_path.parent / 'not_found'
-        tmp.mkdir(exist_ok=True)
-        shutil.copy2(image_path, tmp)
-        rootLogger.error(f"Face not found: {image_path}")
-        return 'face not found'
-
-    # Found more than one face
-    if len(face_locations) > 1:
-        rootLogger.error(f"Found {len(face_locations)} faces: {image_path}")
-        return f'found {len(face_locations)} faces'
-
-    # Get face encodings
-    face_encodings = face_recognition.face_encodings(image, face_locations, model=ENCODING_MODEL_NAME, num_jitters=UP_SAMPLE_TIMES)
+    face = embeddings[0]
 
     # Get known faces encoding
     clients = await get_all_clients()
     known_faces = [client.face_encoding for client in clients]
 
-    # Compare encodings
-    results = face_recognition.compare_faces(known_faces, face_encodings[0], tolerance=TOLERANCE)
+    # Compare with known faces
+    results = compare_faces(known_faces, face)
 
     # Extract matches
     indexes = np.nonzero(results)[0]  # axe=0
-    if len(indexes) == 0:  # Clients with this face aren't found.
-        return face_encodings[0]  # Return face encoding
 
-    # Found more than one matches
-    if len(indexes) > 1:
-        clients_id = list(clients[i].id for i in indexes)
-        rootLogger.warning(f"Found {len(indexes)} face matches: {image_path} ({clients_id})")
-        return f'found {len(indexes)} face matches ({clients_id})'
+    # Clients with this face aren't found.
+    if len(indexes) == 0:
+        return None, face  # Return only face encoding
 
-    return clients[indexes[0]]  # Return matched client
+    return [clients[i] for i in indexes], face  # Return an array of clients and face encoding
 
 
 async def get_or_create_location_address(address: str) -> Location:

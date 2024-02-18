@@ -6,8 +6,7 @@ from pathlib import Path
 from core.config import SUPPORTED_IMAGE_TYPES, MEDIA_DIR
 from core.database.methods.client import create_client
 from core.database.methods.service import create_visit_service
-from core.database.models import Client
-from . import FOLDERS_INFO, get_or_create_location_address, find_faces, create_visit_with_date, get_date_taken
+from . import FOLDERS_INFO, get_or_create_location_address, create_visit_with_date, get_date_taken, find_faces
 from .logger import rootLogger
 
 
@@ -55,14 +54,15 @@ async def fill_database():
 
                     rootLogger.info(f'Processing image: {img_path}')
 
-                    result = await find_faces(img_path)
-                    if isinstance(result, str):
-                        processed[i_path] = result
+                    clients, face = await find_faces(img_path)
+                    if face is None:
+                        processed[i_path] = f'found 0 or >1 faces'
                         continue
 
-                    if isinstance(result, Client):
-                        processed[i_path] = 'face exists'
-                        rootLogger.warning(f"Found face match: {img_path}")
+                    if clients is not None:
+                        clients_id = [client.id for client in clients]
+                        rootLogger.warning(f'Face on {img_path} similar with: {clients_id}')
+                        processed[i_path] = f'found {len(clients)} similar'
                         continue
 
                     rootLogger.info(f'Copy image to media directory: {img_path}')
@@ -75,12 +75,9 @@ async def fill_database():
                     last_num += 1
 
                     face_path = shutil.copy2(img_path, save_path)
+                    date = get_date_taken(img_path) or datetime.utcnow()
 
-                    date = get_date_taken(img_path)
-                    if date is None:
-                        date = datetime.utcnow()
-
-                    client = await create_client(face_path, result)
+                    client = await create_client(face_path, face)
                     visit = await create_visit_with_date(client.id, location.id, date)
                     await create_visit_service(visit.id, service_title)
 

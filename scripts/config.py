@@ -1,42 +1,42 @@
 # Do not make mistakes!
 FOLDERS_INFO = [
     {
-        'folder': r'I:\XXX\Сервисы-uk dd monzo wise binance grub\1 локация спб',
+        'folder': r'H:\XXX\Сервисы-uk dd monzo wise binance grub\1 локация спб',
         'service_title': 'uk dd monzo wise binance grub',
         'location_address': 'спб'
     },
     {
-        'folder': r'I:\XXX\Сервисы-uk dd monzo wise binance grub\2 локация спб',
+        'folder': r'H:\XXX\Сервисы-uk dd monzo wise binance grub\2 локация спб',
         'service_title': 'uk dd monzo wise binance grub',
         'location_address': 'спб'
     },
     {
-        'folder': r'I:\XXX\Сервисы-uk dd monzo wise binance grub\3 локация спб',
+        'folder': r'H:\XXX\Сервисы-uk dd monzo wise binance grub\3 локация спб',
         'service_title': 'uk dd monzo wise binance grub',
         'location_address': 'спб'
     },
     {
-        'folder': r'I:\XXX\Сервисы-uk dd monzo wise binance grub\4 локация спб',
+        'folder': r'H:\XXX\Сервисы-uk dd monzo wise binance grub\4 локация спб',
         'service_title': 'uk dd monzo wise binance grub',
         'location_address': 'спб'
     },
     {
-        'folder': r'I:\XXX\Сервисы-uk dd monzo wise binance grub\локация мск',
+        'folder': r'H:\XXX\Сервисы-uk dd monzo wise binance grub\локация мск',
         'service_title': 'uk dd monzo wise binance grub',
         'location_address': 'мск'
     },
     {
-        'folder': r'I:\XXX\Сервисы- фотодропы (реги)',
+        'folder': r'H:\XXX\Сервисы- фотодропы (реги)',
         'service_title': 'фотодропы (реги)',
         'location_address': 'спб'
     },
     {
-        'folder': r'I:\XXX\Сервисы- фотодропы (реги)\ж',
+        'folder': r'H:\XXX\Сервисы- фотодропы (реги)\ж',
         'service_title': 'фотодропы (реги)',
         'location_address': 'спб'
     },
     {
-        'folder': r'I:\XXX\Сервисы- старые(ivan)',
+        'folder': r'H:\XXX\Сервисы- старые(ivan)',
         'service_title': 'старые(ivan)',
         'location_address': 'спб'
     },
