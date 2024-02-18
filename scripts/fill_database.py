@@ -46,7 +46,7 @@ async def fill_database():
             for img_type in SUPPORTED_IMAGE_TYPES.values():
                 for i, img_path in enumerate(folder.glob(f'*{img_type}')):
                     i_path = str(img_path)
-                    img_path_temp = shutil.copy2(i_path, td)
+                    img_path_temp = shutil.copy2(i_path, td.name)
 
                     if i % 100 == 0:
                         rootLogger.info(f'Processed {i} images in folder: {folder}. Dump data...')
