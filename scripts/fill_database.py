@@ -45,13 +45,15 @@ async def fill_database():
                 rootLogger.error(f"Service title cannot be empty!")
                 continue
 
+            was_changes = False
             last_num = temp_num = 1
             for img_type in SUPPORTED_IMAGE_TYPES.values():
                 files = chain(folder.glob(f'*{img_type.lower()}'), folder.glob(f'*{img_type.upper()}'))
                 for i, img_path in enumerate(files):
                     i_path = img_path.name  # dictionary's key for file processed.json
 
-                    if i % 100 == 0:
+                    if i % 100 == 0 and was_changes:
+                        was_changes = False
                         rootLogger.info(f'Processed {i} images in folder: {folder}. Dump data...')
                         with processed_file.open('w', encoding='utf-8') as f:
                             json.dump(processed, f, ensure_ascii=True, indent=4)
@@ -79,6 +81,7 @@ async def fill_database():
                         im.convert('RGB').save(img_path_temp)
 
                     rootLogger.info(f'Processing image: {img_path}')
+                    was_changes = True
 
                     # Recognize faces on image
                     clients, face = await find_faces(img_path_temp)
