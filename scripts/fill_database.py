@@ -42,10 +42,16 @@ async def fill_database():
                 rootLogger.error(f"Service title cannot be empty!")
                 continue
 
-            last_num = 1
+            last_num = temp_num = 1
             for img_type in SUPPORTED_IMAGE_TYPES.values():
                 for i, img_path in enumerate(folder.glob(f'*{img_type}')):
                     i_path = img_path.name  # dictionary's key for file processed.json
+
+                    temp_file = Path(td.name) / f'{temp_num}{img_path.suffix.lower()}'
+                    while temp_file.exists():
+                        temp_num += 1
+                        temp_file = Path(td.name) / f'{temp_num}{img_path.suffix.lower()}'
+
                     img_path_temp = shutil.copy2(str(img_path), td.name)
 
                     if i % 100 == 0:
@@ -77,6 +83,7 @@ async def fill_database():
                         save_path = MEDIA_DIR / f'{last_num}{img_path.suffix.lower()}'
 
                     last_num += 1
+                    temp_num += 2
 
                     face_path = shutil.copy2(img_path, save_path)
                     date = get_date_taken(img_path) or datetime.utcnow()
