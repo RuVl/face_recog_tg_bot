@@ -6,12 +6,16 @@ from itertools import chain
 from pathlib import Path
 
 from PIL import Image
+from pillow_heif import register_heif_opener
 
 from core.config import SUPPORTED_IMAGE_TYPES, MEDIA_DIR
 from core.database.methods.client import create_client
 from core.database.methods.service import create_visit_service
 from . import FOLDERS_INFO, get_or_create_location_address, create_visit_with_date, get_date_taken, find_faces
 from .logger import rootLogger
+
+
+register_heif_opener()
 
 
 async def fill_database():
@@ -61,6 +65,9 @@ async def fill_database():
                     if processed.get(i_path) is not None:
                         continue
 
+                    rootLogger.info(f'Processing image: {img_path}')
+                    was_changes = True
+
                     # Move image to temp dir
                     temp_file = Path(td.name) / f'{temp_num}{img_type}'
                     while temp_file.exists():
@@ -71,6 +78,7 @@ async def fill_database():
 
                     # Convert to jpg for deepface
                     if img_type != '.jpg':
+                        rootLogger.info(f'Converting {img_path} to .jpg')
                         im = Image.open(img_path_temp)
 
                         img_path_temp = Path(td.name) / f'{temp_num}.jpg'
@@ -79,9 +87,6 @@ async def fill_database():
                             img_path_temp = Path(td.name) / f'{temp_num}.jpg'
 
                         im.convert('RGB').save(img_path_temp)
-
-                    rootLogger.info(f'Processing image: {img_path}')
-                    was_changes = True
 
                     # Recognize faces on image
                     clients, face = await find_faces(img_path_temp)
