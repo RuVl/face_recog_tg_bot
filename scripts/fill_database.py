@@ -5,17 +5,14 @@ from datetime import datetime
 from itertools import chain
 from pathlib import Path
 
+import pillow_heif
 from PIL import Image
-from pillow_heif import register_heif_opener
 
 from core.config import SUPPORTED_IMAGE_TYPES, MEDIA_DIR
 from core.database.methods.client import create_client
 from core.database.methods.service import create_visit_service
 from . import FOLDERS_INFO, get_or_create_location_address, create_visit_with_date, get_date_taken, find_faces
 from .logger import rootLogger
-
-
-register_heif_opener()
 
 
 async def fill_database():
@@ -77,14 +74,14 @@ async def fill_database():
                     img_path_temp = Path(shutil.copy2(str(img_path), temp_file))
 
                     # Convert to jpg for deepface
-                    if img_type != '.jpg':
+                    if img_type != '.jpg' and pillow_heif.is_supported(img_path_temp):
                         rootLogger.info(f'Converting {img_path} to .jpg')
                         im = Image.open(img_path_temp)
 
-                        img_path_temp = Path(td.name) / f'{temp_num}.jpg'
-                        while temp_file.exists():
+                        img_path_temp = Path(td.name) / f'{temp_num}_heic.jpg'
+                        while img_path_temp.exists():
                             temp_num += 1
-                            img_path_temp = Path(td.name) / f'{temp_num}.jpg'
+                            img_path_temp = Path(td.name) / f'{temp_num}_heic.jpg'
 
                         im.convert('RGB').save(img_path_temp)
 

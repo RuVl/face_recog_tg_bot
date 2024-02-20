@@ -9,7 +9,6 @@ from cancel_token import CancellationToken
 from core.callback_factory import PaginatorFactory
 from core.config import MEDIA_DIR
 from core.database.methods.client import load_clients_profile_images, create_client, get_client
-from core.database.methods.image import get_image_by_id
 from core.database.methods.user import check_if_admin, check_if_moderator
 from core.handlers import admin_moderator_router
 from core.handlers.shared import show_client, show_clients_choosing, notify_admins
@@ -69,25 +68,25 @@ async def check_face(msg: types.Message, state: FSMContext):
                                 reply_markup=yes_no_cancel(None), parse_mode='MarkdownV2')
         return
 
-    if len(clients) == 1:  # Found 1 face
-        client = clients[0]
+    # if len(clients) == 1:  # Found 1 face
+    #     client = clients[0]
+    #
+    #     # TODO save telegram_image_id for this image
+    #     profile_picture = await get_image_by_id(client.profile_picture_id)
+    #
+    #     await state.update_data(client_id=client.id, client_photo_path=profile_picture.path)
+    #     await state.set_state(SharedMenu.SHOW_FACE_INFO)
+    #
+    #     await show_client(message, state, add_visit_kb())
+    #     await message.delete()
+    # else:  # Found more than one face
+    clients = await load_clients_profile_images(clients)
 
-        # TODO save telegram_image_id for this image
-        profile_picture = await get_image_by_id(client.profile_picture_id)
+    await state.update_data(possible_clients=clients)
+    await state.set_state(SharedMenu.CHOOSE_FACE)
 
-        await state.update_data(client_id=client.id, client_photo_path=profile_picture.path)
-        await state.set_state(SharedMenu.SHOW_FACE_INFO)
-
-        await show_client(message, state, add_visit_kb())
-        await message.delete()
-    else:  # Found more than one face
-        clients = await load_clients_profile_images(clients)
-
-        await state.update_data(possible_clients=clients)
-        await state.set_state(SharedMenu.CHOOSE_FACE)
-
-        await show_clients_choosing(message, state)
-        await message.delete()
+    await show_clients_choosing(message, state)
+    await message.delete()
 
     check_face_token.complete()
 
