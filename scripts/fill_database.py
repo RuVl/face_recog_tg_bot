@@ -5,6 +5,8 @@ from datetime import datetime
 from itertools import chain
 from pathlib import Path
 
+from PIL import Image
+
 from core.config import SUPPORTED_IMAGE_TYPES, MEDIA_DIR
 from core.database.methods.client import create_client
 from core.database.methods.service import create_visit_service
@@ -49,13 +51,6 @@ async def fill_database():
                 for i, img_path in enumerate(files):
                     i_path = img_path.name  # dictionary's key for file processed.json
 
-                    temp_file = Path(td.name) / f'{temp_num}{img_path.suffix.lower()}'
-                    while temp_file.exists():
-                        temp_num += 1
-                        temp_file = Path(td.name) / f'{temp_num}{img_path.suffix.lower()}'
-
-                    img_path_temp = shutil.copy2(str(img_path), temp_file)
-
                     if i % 100 == 0:
                         rootLogger.info(f'Processed {i} images in folder: {folder}. Dump data...')
                         with processed_file.open('w', encoding='utf-8') as f:
@@ -64,8 +59,28 @@ async def fill_database():
                     if processed.get(i_path) is not None:
                         continue
 
+                    # Move image to temp dir
+                    temp_file = Path(td.name) / f'{temp_num}{img_type}'
+                    while temp_file.exists():
+                        temp_num += 1
+                        temp_file = Path(td.name) / f'{temp_num}{img_type}'
+
+                    img_path_temp = Path(shutil.copy2(str(img_path), temp_file))
+
+                    # Convert to jpg for deepface
+                    if img_type != '.jpg':
+                        im = Image.open(img_path_temp)
+
+                        img_path_temp = Path(td.name) / f'{temp_num}.jpg'
+                        while temp_file.exists():
+                            temp_num += 1
+                            img_path_temp = Path(td.name) / f'{temp_num}.jpg'
+
+                        im.convert('RGB').save(img_path_temp)
+
                     rootLogger.info(f'Processing image: {img_path}')
 
+                    # Recognize faces on image
                     clients, face = await find_faces(img_path_temp)
                     if face is None:
                         processed[i_path] = f'found 0 or >1 faces'
@@ -82,7 +97,7 @@ async def fill_database():
                     save_path = MEDIA_DIR / f'{last_num}{img_path.suffix.lower()}'
                     while save_path.exists():
                         last_num += 1
-                        save_path = MEDIA_DIR / f'{last_num}{img_path.suffix.lower()}'
+                        save_path = MEDIA_DIR / f'{last_num}{img_type}'
 
                     last_num += 1
                     temp_num += 2
