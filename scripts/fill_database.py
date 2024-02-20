@@ -2,6 +2,7 @@ import json
 import shutil
 import tempfile
 from datetime import datetime
+from itertools import chain
 from pathlib import Path
 
 from core.config import SUPPORTED_IMAGE_TYPES, MEDIA_DIR
@@ -44,7 +45,8 @@ async def fill_database():
 
             last_num = temp_num = 1
             for img_type in SUPPORTED_IMAGE_TYPES.values():
-                for i, img_path in enumerate(folder.glob(f'*{img_type}')):
+                files = chain(folder.glob(f'*{img_type.lower()}'), folder.glob(f'*{img_type.upper()}'))
+                for i, img_path in enumerate(files):
                     i_path = img_path.name  # dictionary's key for file processed.json
 
                     temp_file = Path(td.name) / f'{temp_num}{img_path.suffix.lower()}'
@@ -52,7 +54,7 @@ async def fill_database():
                         temp_num += 1
                         temp_file = Path(td.name) / f'{temp_num}{img_path.suffix.lower()}'
 
-                    img_path_temp = shutil.copy2(str(img_path), td.name)
+                    img_path_temp = shutil.copy2(str(img_path), temp_file)
 
                     if i % 100 == 0:
                         rootLogger.info(f'Processed {i} images in folder: {folder}. Dump data...')
