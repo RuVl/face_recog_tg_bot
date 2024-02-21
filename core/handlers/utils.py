@@ -24,8 +24,8 @@ async def download_image(msg: types.Message, cancellation_token: CancellationTok
     """
 
     # File is too big
-    if msg.document.file_size > 20 * 1024 * 1024:
-        message = await msg.reply('Файл слишком большой\! 😖',
+    if msg.document.file_size > 10 * 1024 * 1024:
+        message = await msg.reply('Файл слишком большой\! \(Не более 10мб\) 😖',
                                   reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2')
         cancellation_token.complete()
         return None, message
@@ -69,6 +69,13 @@ async def download_image(msg: types.Message, cancellation_token: CancellationTok
     try:
         image = Image.open(document_path)
         w, h = image.size
+
+        if w + h > 10000:
+            await message.edit_text('Ширина и высота фотографии в сумме не должны превышать 10000\!',
+                                    reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2')
+            document_path.unlink(missing_ok=True)
+            cancellation_token.complete()
+            return None, message
 
         if max(w, h) / min(w, h) > 20:
             await message.edit_text('Соотношение высоты к ширине не должно превышать 20\.',
