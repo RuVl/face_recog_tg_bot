@@ -126,6 +126,10 @@ async def find_faces(image_path: Path, msg: types.Message, cancellation_token: C
         cancellation_token.complete()
         return None, None
 
+    await msg.edit_text('📇 Обнаружено 1 лицо\!\n'
+                        'Поиск совпадений в базе данных\. 🗄',
+                        reply_markup=cancel_keyboard(), parse_mode='MarkdownV2')
+
     face = embeddings[0]
 
     # Get known faces encoding
