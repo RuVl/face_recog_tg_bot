@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from aiogram import types
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
 from aiogram.types import FSInputFile, InputMediaPhoto
 
@@ -22,10 +23,20 @@ async def show_client(msg: types.Message, state: FSMContext, reply_markup: types
     face_path = state_data.get('client_photo_path')
 
     text = await face_info_text(client_id)
-    await msg.answer_photo(
-        FSInputFile(face_path), caption=text,
-        reply_markup=reply_markup, parse_mode='MarkdownV2'
-    )
+
+    try:
+        await msg.answer_photo(
+            FSInputFile(face_path), caption=text,
+            reply_markup=reply_markup, parse_mode='MarkdownV2'
+        )
+    except TelegramBadRequest:
+        await msg.bot.send_message(TgKeys.ADMIN_GROUP_ID,
+                                   f'Произошла ошибка при отправке фотографии `{face_path}` клиента `{client_id}`\!\n'
+                                   f'Лимиты телеграмм: https://core.telegram.org/bots/api#sending-files',
+                                   parse_mode='MarkdownV2')
+        await msg.answer('Возникла ошибка при отправке фотографии\!\n'
+                         'Информация уже отправлена админам\.',
+                         reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2')
 
 
 async def show_clients_choosing(msg: types.Message, state: FSMContext, page=None):
@@ -52,13 +63,23 @@ async def show_clients_choosing(msg: types.Message, state: FSMContext, page=None
 
     clients2show = clients[page * COLS * ROWS: (page + 1) * COLS * ROWS]
 
-    media_msg = await msg.answer_media_group([
-        InputMediaPhoto(
-            media=FSInputFile(client.profile_picture.path),
-            caption=f'· {client.id} ·',
-            parse_mode='MarkdownV2'
-        ) for client in clients2show
-    ])
+    try:
+        media_msg = await msg.answer_media_group([
+            InputMediaPhoto(
+                media=FSInputFile(client.profile_picture.path),
+                caption=f'· {client.id} ·',
+                parse_mode='MarkdownV2'
+            ) for client in clients2show
+        ])
+    except TelegramBadRequest:
+        await msg.bot.send_message(TgKeys.ADMIN_GROUP_ID,
+                                   f'Произошла ошибка при отправке галереи из клиентов `{clients2show}`\!\n'
+                                   f'Лимиты телеграмм: https://core.telegram.org/bots/api#sending-files',
+                                   parse_mode='MarkdownV2')
+        await msg.answer('Возникла ошибка при отправке фотографии\!\n'
+                         'Информация уже отправлена админам\.',
+                         reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2')
+        return
 
     await msg.answer('Выберите этого человека из нескольких распознанных выше\.\n'
                      'Если такого человека нет \- нажмите добавить нового',

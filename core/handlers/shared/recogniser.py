@@ -16,7 +16,6 @@ from core.keyboards.inline import cancel_keyboard, yes_no_cancel, add_visit_kb, 
 from core.state_machines import SharedMenu, AdminMenu, ModeratorMenu, AnyoneMenu
 from core.text import cancel_previous_processing, file_downloaded
 
-
 shared_recognizer_router = Router()
 
 
@@ -151,8 +150,8 @@ async def add_new_client(callback: types.CallbackQuery, state: FSMContext):
 
 # /start -> 'check_face' -> document provided -> found some faces
 @shared_recognizer_router.callback_query(SharedMenu.CHOOSE_FACE,
-                                       ~PaginatorFactory.filter(F.action == 'change_page'),
-                                       F.data != 'cancel')
+                                         ~PaginatorFactory.filter(F.action == 'change_page'),
+                                         F.data != 'cancel')
 async def choose_face(callback: types.CallbackQuery, state: FSMContext):
     match callback.data:
         case 'add_new_client':

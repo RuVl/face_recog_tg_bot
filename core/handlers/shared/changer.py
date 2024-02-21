@@ -18,7 +18,6 @@ from core.misc import TgKeys
 from core.state_machines import SharedMenu
 from core.text import exit_visit, adding_name, adding_contacts, adding_services, adding_photos, face_info_text, created_visit
 
-
 shared_changer_router = Router()
 
 

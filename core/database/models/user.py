@@ -21,5 +21,5 @@ class User(Base):
     is_moderator: Mapped[bool] = Column(Boolean, default=False)
     is_admin: Mapped[bool] = Column(Boolean, default=False)
 
-    location_id: Mapped[int] = Column(ForeignKey('locations.id'))
+    location_id: Mapped[int] = Column(ForeignKey('locations.id'), nullable=False)
     location: Mapped['Location'] = relationship('Location')
