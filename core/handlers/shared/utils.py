@@ -12,6 +12,7 @@ from core.keyboards.inline.shared import select_clients_kb
 from core.misc import TgKeys
 from core.state_machines import SharedMenu
 from core.text import face_info_text
+from core.text.utils import escape_markdown_v2
 
 
 async def show_client(msg: types.Message, state: FSMContext, reply_markup: types.InlineKeyboardMarkup):
@@ -31,11 +32,12 @@ async def show_client(msg: types.Message, state: FSMContext, reply_markup: types
         )
     except TelegramBadRequest:
         await msg.bot.send_message(TgKeys.ADMIN_GROUP_ID,
-                                   f'Произошла ошибка при отправке фотографии `{face_path}` клиента `{client_id}`\!\n'
-                                   f'Лимиты телеграмм: https://core.telegram.org/bots/api#sending-files',
+                                   f'Произошла ошибка при отправке фотографии `{escape_markdown_v2(face_path)}` клиента `{client_id}`\!\n' +
+                                   escape_markdown_v2('Лимиты телеграмм: https://core.telegram.org/bots/api#sending-files'),
                                    parse_mode='MarkdownV2')
         await msg.answer('Возникла ошибка при отправке фотографии\!\n'
-                         'Информация уже отправлена админам\.',
+                         'Информация уже отправлена админам\.\n'
+                         'Приносим свои извинения за неудобство 😣',
                          reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2')
 
 
@@ -72,12 +74,14 @@ async def show_clients_choosing(msg: types.Message, state: FSMContext, page=None
             ) for client in clients2show
         ])
     except TelegramBadRequest:
+        clients_id = [client.id for client in clients2show]
         await msg.bot.send_message(TgKeys.ADMIN_GROUP_ID,
-                                   f'Произошла ошибка при отправке галереи из клиентов `{clients2show}`\!\n'
-                                   f'Лимиты телеграмм: https://core.telegram.org/bots/api#sending-files',
+                                   f'Произошла ошибка при отправке галереи из клиентов `{"`, `".join(clients_id)}`\!\n' +
+                                   escape_markdown_v2('Лимиты телеграмм: https://core.telegram.org/bots/api#sending-files'),
                                    parse_mode='MarkdownV2')
         await msg.answer('Возникла ошибка при отправке фотографии\!\n'
-                         'Информация уже отправлена админам\.',
+                         'Информация уже отправлена админам\.\n'
+                         'Приносим свои извинения за неудобство 😣',
                          reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2')
         return
 
