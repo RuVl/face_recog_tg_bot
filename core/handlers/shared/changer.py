@@ -1,7 +1,7 @@
 import logging
 from pathlib import Path
 
-from aiogram import types, F, Bot
+from aiogram import types, F, Bot, Router
 from aiogram.enums import ContentType
 from aiogram.filters import or_f
 from aiogram.fsm.context import FSMContext
@@ -12,7 +12,6 @@ from core.database.methods.image import create_image_from_path
 from core.database.methods.service import create_visit_service
 from core.database.methods.user import get_tg_user_location
 from core.database.methods.visit import create_visit, update_visit_name, update_visit_contacts
-from core.handlers import admin_moderator_router
 from core.handlers.shared import show_client
 from core.keyboards.inline import add_visit_info_kb, cancel_keyboard, add_visit_kb
 from core.misc import TgKeys
@@ -20,8 +19,11 @@ from core.state_machines import SharedMenu
 from core.text import exit_visit, adding_name, adding_contacts, adding_services, adding_photos, face_info_text, created_visit
 
 
+shared_changer_router = Router()
+
+
 # /start -> 'check_face' -> face found
-@admin_moderator_router.callback_query(F.data != 'cancel', SharedMenu.SHOW_FACE_INFO)
+@shared_changer_router.callback_query(F.data != 'cancel', SharedMenu.SHOW_FACE_INFO)
 async def add_visit(callback: types.CallbackQuery, state: FSMContext):
     """ Show face info. Add a new client visit. """
 
@@ -49,7 +51,7 @@ async def add_visit(callback: types.CallbackQuery, state: FSMContext):
 
 
 # /start -> 'check_face' -> face found -> 'add_visit'
-@admin_moderator_router.callback_query(F.data != 'cancel', SharedMenu.ADD_VISIT)
+@shared_changer_router.callback_query(F.data != 'cancel', SharedMenu.ADD_VISIT)
 async def add_visit_info(callback: types.CallbackQuery, state: FSMContext):
     """ Handle buttons to add visit info. """
 
@@ -99,7 +101,7 @@ async def alert2admins(bot: Bot, user: types.User, state: FSMContext):
 
 
 # /start -> 'check_face' -> face found -> 'add_visit' -> 'cancel'
-@admin_moderator_router.callback_query(F.data == 'cancel', SharedMenu.ADD_VISIT)
+@shared_changer_router.callback_query(F.data == 'cancel', SharedMenu.ADD_VISIT)
 async def add_visit_back(callback: types.CallbackQuery, state: FSMContext):
     """ Return to show face info """
 
@@ -111,7 +113,7 @@ async def add_visit_back(callback: types.CallbackQuery, state: FSMContext):
 
 
 # /start -> 'check_face' -> face found -> 'add_visit' -> 'add_name'
-@admin_moderator_router.message(SharedMenu.ADD_VISIT_NAME)
+@shared_changer_router.message(SharedMenu.ADD_VISIT_NAME)
 async def add_visit_name(msg: types.Message, state: FSMContext):
     """ Add visit name """
 
@@ -132,7 +134,7 @@ async def add_visit_name(msg: types.Message, state: FSMContext):
 
 
 # /start -> 'check_face' -> face found -> 'add_visit' -> 'add_contacts'
-@admin_moderator_router.message(SharedMenu.ADD_VISIT_CONTACTS)
+@shared_changer_router.message(SharedMenu.ADD_VISIT_CONTACTS)
 async def add_visit_contacts(msg: types.Message, state: FSMContext):
     """ Add visit contacts """
 
@@ -153,7 +155,7 @@ async def add_visit_contacts(msg: types.Message, state: FSMContext):
 
 
 # /start -> 'check_face' -> face found -> 'add_visit' -> 'add_service'
-@admin_moderator_router.message(SharedMenu.ADD_VISIT_SERVICE)
+@shared_changer_router.message(SharedMenu.ADD_VISIT_SERVICE)
 async def add_visit_service(msg: types.Message, state: FSMContext):
     """ Add visit services """
 
@@ -174,7 +176,7 @@ async def add_visit_service(msg: types.Message, state: FSMContext):
 
 
 # /start -> 'check_face' -> face found -> 'add_visit' -> 'add_images'
-@admin_moderator_router.message(SharedMenu.ADD_VISIT_IMAGES, F.content_type == ContentType.DOCUMENT)
+@shared_changer_router.message(SharedMenu.ADD_VISIT_IMAGES, F.content_type == ContentType.DOCUMENT)
 async def add_visit_images(msg: types.Message, state: FSMContext):
     """ Add visit images """
 
@@ -212,7 +214,7 @@ async def add_visit_images(msg: types.Message, state: FSMContext):
 
 
 # /start -> 'check_face' -> face found -> 'add_visit' -> '...' -> 'cancel'
-@admin_moderator_router.callback_query(F.data == 'cancel', or_f(
+@shared_changer_router.callback_query(F.data == 'cancel', or_f(
     SharedMenu.ADD_VISIT_NAME, SharedMenu.ADD_VISIT_CONTACTS,
     SharedMenu.ADD_VISIT_SERVICE, SharedMenu.ADD_VISIT_IMAGES
 ))

@@ -6,11 +6,13 @@ from core.database.methods.client import get_client
 from core.database.methods.image import get_image_by_id
 from core.filters import IsAdminOrModeratorMessageFilter, IsAdminOrModeratorCallbackFilter
 from core.handlers.shared import show_client
+from core.handlers.shared.changer import shared_changer_router
 from core.keyboards.inline import cancel_keyboard, add_visit_kb
 from core.state_machines import AdminMenu, ModeratorMenu, SharedMenu
 from core.text import send_me_image
 
 admin_moderator_router = Router()
+admin_moderator_router.include_routers(shared_changer_router)
 
 admin_moderator_router.message.filter(
     F.chat.type == 'private',

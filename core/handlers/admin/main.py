@@ -4,11 +4,12 @@ from aiogram.fsm.context import FSMContext
 
 from core.filters import IsAdminMessageFilter, IsAdminCallbackFilter
 from core.handlers.admin.menu import admin_menu_router
+from core.handlers.shared.recogniser import shared_recognizer_router
 from core.keyboards.inline import admin_start_menu, admin_menu
 from core.state_machines import AdminMenu
 
 admin_router = Router()
-admin_router.include_router(admin_menu_router)
+admin_router.include_routers(admin_menu_router, shared_recognizer_router)
 
 # Filters
 admin_router.message.filter(

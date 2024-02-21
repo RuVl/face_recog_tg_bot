@@ -1,6 +1,6 @@
 import shutil
 
-from aiogram import F, types
+from aiogram import F, types, Router
 from aiogram.enums import ContentType
 from aiogram.filters import or_f
 from aiogram.fsm.context import FSMContext
@@ -10,7 +10,6 @@ from core.callback_factory import PaginatorFactory
 from core.config import MEDIA_DIR
 from core.database.methods.client import load_clients_profile_images, create_client, get_client
 from core.database.methods.user import check_if_admin, check_if_moderator
-from core.handlers import admin_moderator_router
 from core.handlers.shared import show_client, show_clients_choosing, notify_admins
 from core.handlers.utils import download_image, find_faces, clear_temp_image
 from core.keyboards.inline import cancel_keyboard, yes_no_cancel, add_visit_kb, admin_start_menu, moderator_start_menu, anyone_start_menu
@@ -18,8 +17,11 @@ from core.state_machines import SharedMenu, AdminMenu, ModeratorMenu, AnyoneMenu
 from core.text import cancel_previous_processing, file_downloaded
 
 
+shared_recognizer_router = Router()
+
+
 # /start -> 'check_face' -> document provided
-@admin_moderator_router.message(SharedMenu.CHECK_FACE, F.content_type == ContentType.DOCUMENT)
+@shared_recognizer_router.message(SharedMenu.CHECK_FACE, F.content_type == ContentType.DOCUMENT)
 async def check_face(msg: types.Message, state: FSMContext):
     """ Validate and download the provided file. Find a face on it and compare with others. """
 
@@ -92,7 +94,7 @@ async def check_face(msg: types.Message, state: FSMContext):
 
 
 # /start -> 'check_face' -> [...] -> 'cancel'
-@admin_moderator_router.callback_query(F.data == 'cancel', or_f(
+@shared_recognizer_router.callback_query(F.data == 'cancel', or_f(
     SharedMenu.CHECK_FACE,
     SharedMenu.GET_BY_ID,
     SharedMenu.SHOW_FACE_INFO,
@@ -122,7 +124,7 @@ async def return2start_menu(callback: types.CallbackQuery, state: FSMContext):
 
 
 # /start -> 'check_face' -> document provided -> face not found
-@admin_moderator_router.callback_query(SharedMenu.ADD_NEW_CLIENT)
+@shared_recognizer_router.callback_query(SharedMenu.ADD_NEW_CLIENT)
 async def add_new_client(callback: types.CallbackQuery, state: FSMContext):
     match callback.data:
         case 'no':
@@ -148,7 +150,7 @@ async def add_new_client(callback: types.CallbackQuery, state: FSMContext):
 
 
 # /start -> 'check_face' -> document provided -> found some faces
-@admin_moderator_router.callback_query(SharedMenu.CHOOSE_FACE,
+@shared_recognizer_router.callback_query(SharedMenu.CHOOSE_FACE,
                                        ~PaginatorFactory.filter(F.action == 'change_page'),
                                        F.data != 'cancel')
 async def choose_face(callback: types.CallbackQuery, state: FSMContext):
@@ -177,7 +179,7 @@ async def choose_face(callback: types.CallbackQuery, state: FSMContext):
 
 
 # /start -> 'check_face' -> document provided -> found some faces -> 'add_new_client'
-@admin_moderator_router.callback_query(SharedMenu.NOT_CHOSEN, F.data != 'cancel')
+@shared_recognizer_router.callback_query(SharedMenu.NOT_CHOSEN, F.data != 'cancel')
 async def sure2add_new_client(callback: types.CallbackQuery, state: FSMContext):
     match callback.data:
         case 'no':
@@ -191,7 +193,7 @@ async def sure2add_new_client(callback: types.CallbackQuery, state: FSMContext):
 
 
 # /start -> 'check_face' -> document provided -> found some faces
-@admin_moderator_router.callback_query(PaginatorFactory.filter(F.action == 'change_page'), SharedMenu.CHOOSE_FACE)
+@shared_recognizer_router.callback_query(PaginatorFactory.filter(F.action == 'change_page'), SharedMenu.CHOOSE_FACE)
 async def change_page(callback: types.CallbackQuery, callback_data: PaginatorFactory, state: FSMContext):
     await show_clients_choosing(callback.message, state, callback_data.page)
 
