@@ -168,9 +168,10 @@ async def clear_temp_image(state: FSMContext):
     if cancel_token is not None and not cancel_token.completed:
         cancel_token.cancel()
 
-    face_gallery_msg: types.Message = state_data.get('face_gallery_msg')
-    if face_gallery_msg is not None:
-        await face_gallery_msg.delete()
+    face_gallery_msg: list[types.Message] = state_data.get('face_gallery_msg')
+    if face_gallery_msg is not None and isinstance(face_gallery_msg, list):
+        for msg in face_gallery_msg:
+            await msg.delete()
 
     document_path = state_data.get('temp_image_path')
     if document_path is not None:

@@ -5,7 +5,7 @@ from core.database.models import Visit, Service, Image
 
 
 def send_me_image() -> str:
-    return ('Отправьте фотографию как `документ` \(до 20мб\)\.\n'
+    return ('Отправьте фотографию как `документ` \(до 10мб\)\.\n'
             'Допустимые форматы: `.jpg`, `.heic`')
 
 
