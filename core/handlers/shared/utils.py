@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 
 from aiogram import types
@@ -52,7 +53,10 @@ async def show_clients_choosing(msg: types.Message, state: FSMContext, page=None
     face_gallery_msg: list[types.Message] = state_data.get('face_gallery_msg')
     if face_gallery_msg is not None and isinstance(face_gallery_msg, list):
         for msg in face_gallery_msg:
-            await msg.delete()
+            try:
+                await msg.delete()
+            except TelegramBadRequest as e:
+                logging.warning(f'Cannot delete message: {e}')
 
     if page is None:
         page: int = state_data.get('page', 0)

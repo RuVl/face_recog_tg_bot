@@ -1,8 +1,10 @@
+import logging
 from pathlib import Path
 
 import numpy as np
 from PIL import Image, UnidentifiedImageError, ImageOps, ImageFile
 from aiogram import types
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
 from cancel_token import CancellationToken
 from deepface import DeepFace
@@ -171,7 +173,10 @@ async def clear_temp_image(state: FSMContext):
     face_gallery_msg: list[types.Message] = state_data.get('face_gallery_msg')
     if face_gallery_msg is not None and isinstance(face_gallery_msg, list):
         for msg in face_gallery_msg:
-            await msg.delete()
+            try:
+                await msg.delete()
+            except TelegramBadRequest as e:
+                logging.warning(f'Cannot delete message: {e}')
 
     document_path = state_data.get('temp_image_path')
     if document_path is not None:
