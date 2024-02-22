@@ -112,8 +112,8 @@ async def notify_admins(callback: types.CallbackQuery, state: FSMContext):
     # Check if the path exists and send the message or photo
     async def safe_send_photo(path, caption):
         if path and Path(path).exists():
-            await bot.safe_send_photo(TgKeys.ADMIN_GROUP_ID, FSInputFile(path),
-                                      caption=caption, parse_mode='MarkdownV2')
+            await bot.send_photo(TgKeys.ADMIN_GROUP_ID, photo=FSInputFile(path),
+                                 caption=caption, parse_mode='MarkdownV2')
         else:
             await bot.send_message(TgKeys.ADMIN_GROUP_ID, f'`фото не найдено`' + caption,
                                    parse_mode='MarkdownV2')
