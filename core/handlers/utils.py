@@ -176,7 +176,7 @@ async def clear_temp_image(state: FSMContext):
             try:
                 await msg.delete()
             except TelegramBadRequest as e:
-                logging.warning(f'Cannot delete message: {e}')
+                logging.warning(f'Cannot delete message: {e.message}')
 
     document_path = state_data.get('temp_image_path')
     if document_path is not None:

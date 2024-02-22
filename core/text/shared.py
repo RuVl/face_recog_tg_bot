@@ -2,6 +2,7 @@ from core.database.methods.image import get_client_images
 from core.database.methods.service import get_client_services
 from core.database.methods.visit import get_visit_with_location, get_client_visits_with_location
 from core.database.models import Visit, Service, Image
+from core.text.utils import escape_markdown_v2
 
 
 def send_me_image() -> str:
@@ -67,7 +68,9 @@ async def face_info_text(
 
     # All names with dates and locations
     name_and_date_str = '\n'.join(
-        f"{visit.name} \({visit.date:%H:%M %d\.%m\.%Y}\) \- {visit.location.address if visit.location is not None else 'отсутствует'}"
+        f"{escape_markdown_v2(visit.name)} "
+        f"\({visit.date:%H:%M %d\.%m\.%Y}\) "
+        f"\- {escape_markdown_v2(visit.location.address) if visit.location is not None else 'отсутствует'}"
         for visit in visits
     ).strip()
 
@@ -77,7 +80,7 @@ async def face_info_text(
 
     # All services
     services_list = [
-        f'{service.title} \({service.date:%H:%M %d\.%m\.%Y}\)'
+        f'{escape_markdown_v2(service.title)} \({service.date:%H:%M %d\.%m\.%Y}\)'
         for service in services
     ]
 

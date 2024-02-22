@@ -58,7 +58,7 @@ async def show_clients_choosing(msg: types.Message, state: FSMContext, page=None
             try:
                 await msg.delete()
             except TelegramBadRequest as e:
-                logging.warning(f'Cannot delete message: {e}')
+                logging.warning(f'Cannot delete message: {e.message}')
 
     if page is None:
         page: int = state_data.get('page', 0)
