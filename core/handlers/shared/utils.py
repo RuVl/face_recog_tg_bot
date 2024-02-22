@@ -31,7 +31,9 @@ async def show_client(msg: types.Message, state: FSMContext, reply_markup: types
             FSInputFile(face_path), caption=text,
             reply_markup=reply_markup, parse_mode='MarkdownV2'
         )
-    except TelegramBadRequest:
+    except TelegramBadRequest as e:
+        logging.warning(f'Cannot send image {e.message}')
+
         await msg.bot.send_message(TgKeys.ADMIN_GROUP_ID,
                                    f'Произошла ошибка при отправке фотографии `{escape_markdown_v2(face_path)}` клиента `{client_id}`\!\n' +
                                    escape_markdown_v2('Лимиты телеграмм: https://core.telegram.org/bots/api#sending-files'),
@@ -78,7 +80,9 @@ async def show_clients_choosing(msg: types.Message, state: FSMContext, page=None
                 parse_mode='MarkdownV2'
             ) for client in clients2show
         ])
-    except TelegramBadRequest:
+    except TelegramBadRequest as e:
+        logging.warning(f'Cannot send image {e.message}')
+
         clients_id = [client.id for client in clients2show]
         await msg.bot.send_message(TgKeys.ADMIN_GROUP_ID,
                                    f'Произошла ошибка при отправке галереи из клиентов `{"`, `".join(clients_id)}`\!\n' +

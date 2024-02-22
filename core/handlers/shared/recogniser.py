@@ -118,8 +118,8 @@ async def return2start_menu(callback: types.CallbackQuery, state: FSMContext):
     else:
         await state.set_state(AnyoneMenu.START)
         await callback.answer()
-        await callback.message.edit_text('Здравствуйте, возможно вас понизили в должности ☹️',
-                                         reply_markup=anyone_start_menu(), parse_mode='MarkdownV2')
+        await callback.message.answer('Здравствуйте, возможно вас понизили в должности ☹️',
+                                      reply_markup=anyone_start_menu(), parse_mode='MarkdownV2')
 
 
 # /start -> 'check_face' -> document provided -> face not found
