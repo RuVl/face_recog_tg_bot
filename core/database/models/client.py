@@ -18,7 +18,7 @@ class Client(Base):
     id: Mapped[int] = Column(Integer, primary_key=True)
 
     profile_picture_id: Mapped[int] = Column(ForeignKey('images.id'), nullable=False)
-    profile_picture: Mapped['Image'] = relationship('Image')
+    profile_picture: Mapped['Image'] = relationship('Image', lazy='joined')
 
     face_encoding: Mapped[np.ndarray] = Column(JSON, nullable=False)
 

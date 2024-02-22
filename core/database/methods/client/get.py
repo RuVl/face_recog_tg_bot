@@ -33,4 +33,3 @@ async def load_clients_profile_images(clients: list[Client]) -> list[Client]:
         query = select(Client).where(Client.id.in_(clients_id)).options(joinedload(Client.profile_picture))
         result = await session.scalars(query)
         return result.all()
-
