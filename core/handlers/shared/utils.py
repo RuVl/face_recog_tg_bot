@@ -62,7 +62,7 @@ async def show_clients_choosing(msg: types.Message, state: FSMContext, page=None
     state_data = await state.get_data()
 
     face_gallery_msg: list[types.Message] = state_data.get('face_gallery_msg')
-    if face_gallery_msg is not None and isinstance(face_gallery_msg, list):
+    if face_gallery_msg is not None and isinstance(face_gallery_msg, list):  # Delete previous gallery
         for msg in face_gallery_msg:
             try:
                 await msg.delete()

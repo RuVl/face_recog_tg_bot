@@ -91,8 +91,6 @@ async def check_face(msg: types.Message, state: FSMContext):
 async def return2start_menu(callback: types.CallbackQuery, state: FSMContext):
     """ Returns user to moderator or admin menu (or nothing if user neither admin nor moderator) """
 
-    await clear_temp_image(state)
-
     if await check_if_admin(callback.from_user.id):
         await state.set_state(AdminMenu.START)
         text = 'Здравствуйте, админ 👑'
@@ -114,6 +112,8 @@ async def return2start_menu(callback: types.CallbackQuery, state: FSMContext):
         callback.message.answer(text, reply_markup=keyboard, parse_mode='MarkdownV2'),
         state
     )
+
+    await clear_temp_image(state)
 
 
 # /start -> 'check_face' -> document provided -> face not found

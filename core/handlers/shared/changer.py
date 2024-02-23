@@ -1,5 +1,4 @@
 import logging
-from pathlib import Path
 
 from aiogram import types, F, Bot, Router
 from aiogram.enums import ContentType
@@ -7,14 +6,13 @@ from aiogram.filters import or_f
 from aiogram.fsm.context import FSMContext
 from cancel_token import CancellationToken
 
-from core.config import SUPPORTED_IMAGE_TYPES, MEDIA_DIR
 from core.database.methods.client import client_have_visit
 from core.database.methods.image import create_image_from_path
 from core.database.methods.service import create_visit_service
 from core.database.methods.user import get_tg_user_location
 from core.database.methods.visit import create_visit, update_visit_name, update_visit_contacts
 from core.handlers.shared import show_client
-from core.handlers.utils import change_msg, download_image, clear_temp_image, clear_cancellation_tokens
+from core.handlers.utils import change_msg, download_image, clear_cancellation_tokens
 from core.keyboards.inline import add_visit_info_kb, cancel_keyboard, add_visit_kb
 from core.misc import TgKeys
 from core.state_machines import SharedMenu
