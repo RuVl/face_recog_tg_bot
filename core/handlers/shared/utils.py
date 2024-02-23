@@ -8,6 +8,7 @@ from aiogram.types import FSInputFile, InputMediaPhoto
 
 from core import bot
 from core.database.models import Client
+from core.handlers.utils import change_msg
 from core.keyboards.inline import cancel_keyboard
 from core.keyboards.inline.shared import select_clients_kb
 from core.misc import TgKeys
@@ -16,7 +17,10 @@ from core.text import face_info_text
 from core.text.utils import escape_markdown_v2
 
 
-async def show_client(msg: types.Message, state: FSMContext, reply_markup: types.InlineKeyboardMarkup):
+async def show_client(msg: types.Message, state: FSMContext,
+                      *,
+                      text: str = None,
+                      reply_markup: types.InlineKeyboardMarkup = None):
     """ Show the client (photo with caption and buttons). Needs client_id and client_photo_path in state data """
 
     state_data = await state.get_data()
@@ -24,12 +28,14 @@ async def show_client(msg: types.Message, state: FSMContext, reply_markup: types
     client_id = state_data.get('client_id')
     face_path = state_data.get('client_photo_path')
 
-    text = await face_info_text(client_id)
+    if text is None:
+        text = await face_info_text(client_id)
 
     try:
-        await msg.answer_photo(
-            FSInputFile(face_path), caption=text,
-            reply_markup=reply_markup, parse_mode='MarkdownV2'
+        await change_msg(
+            await msg.answer_photo(FSInputFile(face_path), caption=text,
+                                   reply_markup=reply_markup, parse_mode='MarkdownV2'),
+            state
         )
     except TelegramBadRequest as e:
         logging.warning(f'Cannot send image {e.message}')
@@ -38,10 +44,13 @@ async def show_client(msg: types.Message, state: FSMContext, reply_markup: types
                                    f'Произошла ошибка при отправке фотографии `{escape_markdown_v2(face_path)}` клиента `{client_id}`\!\n' +
                                    escape_markdown_v2('Лимиты телеграмм: https://core.telegram.org/bots/api#sending-files'),
                                    parse_mode='MarkdownV2')
-        await msg.answer('Возникла ошибка при отправке фотографии\!\n'
-                         'Информация уже отправлена админам\.\n'
-                         'Приносим свои извинения за неудобство 😣',
-                         reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2')
+        await change_msg(
+            msg.answer('Возникла ошибка при отправке фотографии\!\n'
+                       'Информация уже отправлена админам\.\n'
+                       'Приносим свои извинения за неудобство 😣',
+                       reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2'),
+            state
+        )
 
 
 async def show_clients_choosing(msg: types.Message, state: FSMContext, page=None):
@@ -65,9 +74,12 @@ async def show_clients_choosing(msg: types.Message, state: FSMContext, page=None
 
     clients: list[Client] = state_data.get('possible_clients')
     if clients is None:
-        await msg.answer('Что-то пошло не так, повторите попытку\.\n'
-                         'Приносим свои извинения за неудобство 😣',
-                         reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2')
+        await change_msg(
+            msg.answer('Что-то пошло не так, повторите попытку\.\n'
+                       'Приносим свои извинения за неудобство 😣',
+                       reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2'),
+            state
+        )
         return
 
     clients2show = clients[page * COLS * ROWS: (page + 1) * COLS * ROWS]
@@ -88,15 +100,21 @@ async def show_clients_choosing(msg: types.Message, state: FSMContext, page=None
                                    f'Произошла ошибка при отправке галереи из клиентов `{"`, `".join(clients_id)}`\!\n' +
                                    escape_markdown_v2('Лимиты телеграмм: https://core.telegram.org/bots/api#sending-files'),
                                    parse_mode='MarkdownV2')
-        await msg.answer('Возникла ошибка при отправке фотографии\!\n'
-                         'Информация уже отправлена админам\.\n'
-                         'Приносим свои извинения за неудобство 😣',
-                         reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2')
+        await change_msg(
+            msg.answer('Возникла ошибка при отправке фотографии\!\n'
+                       'Информация уже отправлена админам\.\n'
+                       'Приносим свои извинения за неудобство 😣',
+                       reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2'),
+            state
+        )
         return
 
-    await msg.answer('Выберите этого человека из нескольких распознанных выше\.\n'
-                     'Если такого человека нет \- нажмите добавить нового',
-                     reply_markup=select_clients_kb(clients, page, cols=COLS, rows=ROWS), parse_mode='MarkdownV2')
+    await change_msg(
+        msg.answer('Выберите этого человека из нескольких распознанных выше\.\n'
+                   'Если такого человека нет \- нажмите добавить нового',
+                   reply_markup=select_clients_kb(clients, page, cols=COLS, rows=ROWS), parse_mode='MarkdownV2'),
+        state
+    )
 
     await state.update_data(face_gallery_msg=media_msg)
 

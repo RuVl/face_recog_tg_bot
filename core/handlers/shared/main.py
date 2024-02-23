@@ -7,6 +7,7 @@ from core.database.methods.image import get_image_by_id
 from core.filters import IsAdminOrModeratorMessageFilter, IsAdminOrModeratorCallbackFilter
 from core.handlers.shared import show_client
 from core.handlers.shared.changer import shared_changer_router
+from core.handlers.utils import change_msg
 from core.keyboards.inline import cancel_keyboard, add_visit_kb
 from core.state_machines import AdminMenu, ModeratorMenu, SharedMenu
 from core.text import send_me_image
@@ -34,12 +35,14 @@ async def start_menu(callback: types.CallbackQuery, state: FSMContext):
         case 'check_face':
             await state.set_state(SharedMenu.CHECK_FACE)
             await callback.answer()
-            await callback.message.edit_text(send_me_image(), reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2')
+            msg = await callback.message.edit_text(send_me_image(), reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2')
         case 'get_by_id':
             await state.set_state(SharedMenu.GET_BY_ID)
             await callback.answer()
-            await callback.message.edit_text('Отправьте мне `id` клиента в базе данных',
-                                             reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2')
+            msg = await callback.message.edit_text('Отправьте мне `id` клиента в базе данных',
+                                                   reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2')
+
+    await state.update_data(last_msg=msg)
 
 
 # /start -> 'get_by_id'
@@ -48,12 +51,20 @@ async def get_by_id(msg: types.Message, state: FSMContext):
     try:
         client_id = int(msg.text)
     except ValueError:
-        await msg.reply('Должен быть числом\!', reply_markup=cancel_keyboard(), parse_mode='MarkdownV2')
+        await change_msg(
+            msg.reply('Должен быть числом\!\n\n'
+                      'Отправьте мне `id` клиента в базе данных',
+                      reply_markup=cancel_keyboard(), parse_mode='MarkdownV2'),
+            state
+        )
         return
 
     client = await get_client(client_id)
     if client is None:
-        await msg.answer('Не найден\!', reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2')
+        await change_msg(
+            msg.answer('Не найден\!', reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2'),
+            state
+        )
         return
 
     profile_picture = await get_image_by_id(client.profile_picture_id)
@@ -62,4 +73,4 @@ async def get_by_id(msg: types.Message, state: FSMContext):
     await state.update_data(client_id=client.id, client_photo_path=profile_picture.path)
     await state.set_state(SharedMenu.SHOW_FACE_INFO)
 
-    await show_client(msg, state, add_visit_kb())
+    await show_client(msg, state, reply_markup=add_visit_kb())

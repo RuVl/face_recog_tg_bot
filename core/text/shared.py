@@ -1,5 +1,6 @@
 from core.database.methods.image import get_client_images
 from core.database.methods.service import get_client_services
+from core.database.methods.user import check_if_admin
 from core.database.methods.visit import get_visit_with_location, get_client_visits_with_location
 from core.database.models import Visit, Service, Image
 from core.text.utils import escape_markdown_v2
@@ -19,14 +20,33 @@ def file_downloaded() -> str:
             'Поиск лица на фотографии\. 🔎')
 
 
+def add_name_text() -> str:
+    return 'Введите `имя`:'
+
+
+def add_contacts_text() -> str:
+    return 'Введите `контакты` одним сообщением:'
+
+
+def add_service_text() -> str:
+    return 'Введите `сервис`:'
+
+
+def add_image_text() -> str:
+    return 'Отправляйте мне `фотографии` как документ\.'
+
+
 async def face_info_text(
         client_id: int | str,
+        user_id: int | str = None,
         *,
         images: list[Image] = None,
         visits: list[Visit] = None,
         services: list[Service] = None
 ) -> str:
     """ Returns text info about client """
+
+    is_admin = await check_if_admin(user_id) if user_id is not None else False
 
     if images is None:
         images = await get_client_images(client_id)
@@ -39,27 +59,39 @@ async def face_info_text(
 
     result = f'*id в базе:* `{client_id}`\n\n'
 
-    images_str = '\n'.join(
-        f'`{image.url}`'
-        for image in images
-        if image.url is not None
-    ).strip()
+    if is_admin:
+        images_str = '\n'.join(
+            f'`{image.url}`'
+            for image in images
+            if image.url is not None
+        ).strip()
 
-    if images_str != '' and images_str != '``':
-        result += ('*Ссылки на фотографии:*\n'
-                   f'{images_str}\n\n')
+        if images_str != '' and images_str != '``':
+            result += ('*Ссылки на фотографии:*\n'
+                       f'{images_str}\n\n')
 
     # All contacts from visits
-    contacts_str = '\n'.join(set(
+    social_media_str = '\n'.join(set(
         f'`{contact}`'
         for visit in visits
-        if visit.contacts is not None
-        for contact in visit.contacts.split('\n')
+        if visit.social_media is not None
+        for contact in visit.social_media.split('\n')
     )).strip()
 
-    if contacts_str != '':
-        result += ('*Контакты:*\n'
-                   f'{contacts_str}\n\n')
+    if social_media_str != '':
+        result += ('*Соц сети:*\n'
+                   f'{social_media_str}\n\n')
+
+    # All phone numbers from visits
+    # phone_number_str = '\n'.join(set(
+    #     f'`{format_phone_number(visit.phone_number)}`'
+    #     for visit in visits
+    #     if visit.phone_number is not None
+    # ))
+    #
+    # if phone_number_str != '':
+    #     result += ('*Номера телефонов:*\n'
+    #                f'{phone_number_str}\n\n')
 
     # Check if each visit has location
     for i in range(len(visits)):

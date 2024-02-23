@@ -6,7 +6,7 @@ from aiogram.types import FSInputFile
 from cancel_token import CancellationToken
 
 from core.database.methods.image import get_image_by_id
-from core.handlers.utils import download_image, find_faces, clear_temp_image
+from core.handlers.utils import download_image, find_faces, clear_temp_image, change_msg
 from core.keyboards.inline import anyone_start_menu, cancel_keyboard
 from core.state_machines import AnyoneMenu
 from core.text import send_me_image, cancel_previous_processing, file_downloaded
@@ -22,7 +22,11 @@ anyone_router.message.filter(
 @anyone_router.message(CommandStart())
 async def start(msg: types.Message, state: FSMContext):
     await state.set_state(AnyoneMenu.START)
-    await msg.answer('Здравствуйте, выберите действие\.', reply_markup=anyone_start_menu(), parse_mode='MarkdownV2')
+
+    await change_msg(
+        msg.answer('Здравствуйте, выберите действие\.', reply_markup=anyone_start_menu(), parse_mode='MarkdownV2'),
+        state
+    )
 
 
 # '/start' -> action selected
@@ -54,7 +58,7 @@ async def check_if_exist_face(msg: types.Message, state: FSMContext):
     await state.update_data(check_face_token=check_face_token)  # set token to not None
 
     # Download image from the message
-    image_path, message = await download_image(msg, check_face_token)
+    image_path, message = await download_image(msg, state, check_face_token)
     if check_face_token.completed or image_path is None:
         return
 
@@ -85,11 +89,11 @@ async def check_if_exist_face(msg: types.Message, state: FSMContext):
         # TODO save telegram_image_id for this image
         profile_picture = await get_image_by_id(client.profile_picture_id)
 
-        await message.answer_photo(
-            FSInputFile(profile_picture.path), caption=f'*id в базе:* `{client.id}`',
-            reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2'
+        await change_msg(
+            message.answer_photo(FSInputFile(profile_picture.path), caption=f'*id в базе:* `{client.id}`',
+                                 reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2'),
+            state
         )
-        await message.delete()
     else:  # Found more than one face
         await message.edit_text(
             'Найдено более одного совпадения в базе данных\.\n'
@@ -109,5 +113,7 @@ async def cancel_check_face(callback: types.CallbackQuery, state: FSMContext):
     await state.set_state(AnyoneMenu.START)
 
     await callback.answer()
-    await callback.message.answer('Здравствуйте, выберите действие\.', reply_markup=anyone_start_menu(), parse_mode='MarkdownV2')
-    await callback.message.delete()
+    await change_msg(
+        callback.message.answer('Здравствуйте, выберите действие\.', reply_markup=anyone_start_menu(), parse_mode='MarkdownV2'),
+        state
+    )

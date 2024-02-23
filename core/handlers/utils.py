@@ -1,10 +1,8 @@
-import logging
 from pathlib import Path
 
 import numpy as np
 from PIL import Image, UnidentifiedImageError, ImageOps, ImageFile
-from aiogram import types
-from aiogram.exceptions import TelegramBadRequest
+from aiogram import types, methods
 from aiogram.fsm.context import FSMContext
 from cancel_token import CancellationToken
 from deepface import DeepFace
@@ -18,29 +16,35 @@ from core.keyboards.inline import cancel_keyboard
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 
-async def download_image(msg: types.Message, cancellation_token: CancellationToken) -> tuple[Path | None, types.Message]:
+async def download_image(msg: types.Message, state: FSMContext, cancellation_token: CancellationToken) -> tuple[Path | None, types.Message]:
     """
-        Download the document from msg, check if it is an image and validate its resolution.
+        Download the document from msg to TEMP_DIR, check if it is an image and validate its resolution.
         Returns a path to image and editable message.
         If the task is canceled or errors have occurred, it returns None.
     """
 
     # File is too big
     if msg.document.file_size > 10 * 1024 * 1024:
-        message = await msg.reply('Файл слишком большой\! \(Не более 10мб\) 😖',
-                                  reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2')
+        message = await change_msg(
+            msg.reply('Файл слишком большой\! \(Не более 10мб\) 😖', reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2'),
+            state
+        )
         cancellation_token.complete()
         return None, message
 
     # Unsupported file type
     if msg.document.mime_type not in SUPPORTED_IMAGE_TYPES.keys():
-        message = await msg.reply('Файл неподдерживаемого формата\! 😩',
-                                  reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2')
+        message = await change_msg(
+            msg.reply('Файл неподдерживаемого формата\! 😩', reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2'),
+            state
+        )
         cancellation_token.complete()
         return None, message
 
-    message = await msg.answer('Скачивание файла\. 📄',
-                               reply_markup=cancel_keyboard(), parse_mode='MarkdownV2')
+    message = await change_msg(
+        msg.answer('Скачивание файла\. 📄', reply_markup=cancel_keyboard(), parse_mode='MarkdownV2'),
+        state
+    )
 
     # Create temporary directory
     TEMP_DIR.mkdir(exist_ok=True)
@@ -161,25 +165,49 @@ async def find_faces(image_path: Path, msg: types.Message, cancellation_token: C
     return [clients[i] for i in indexes], face  # Return an array of clients and face encoding
 
 
+async def clear_cancellation_tokens(state: FSMContext):
+    state_data = await state.get_data()
+
+    check_face_token: CancellationToken = state_data.get('check_face_token')
+    if check_face_token is not None and not check_face_token.completed:
+        check_face_token.cancel()
+
+    add_image_token: CancellationToken = state_data.get('add_image_token')
+    if add_image_token is not None and not add_image_token.completed:
+        add_image_token.cancel()
+
+
 async def clear_temp_image(state: FSMContext):
     """ Delete file in temp_image_path and clear state """
 
+    await clear_cancellation_tokens(state)
     state_data = await state.get_data()
-
-    cancel_token: CancellationToken = state_data.get('check_face_token')
-    if cancel_token is not None and not cancel_token.completed:
-        cancel_token.cancel()
 
     face_gallery_msg: list[types.Message] = state_data.get('face_gallery_msg')
     if face_gallery_msg is not None and isinstance(face_gallery_msg, list):
         for msg in face_gallery_msg:
-            try:
-                await msg.delete()
-            except TelegramBadRequest as e:
-                logging.warning(f'Cannot delete message: {e.message}')
+            await msg.delete()
 
     document_path = state_data.get('temp_image_path')
     if document_path is not None:
         Path(document_path).unlink(missing_ok=True)
 
     await state.clear()
+
+
+async def change_msg(awaitable_msg: methods.TelegramMethod[types.Message], state: FSMContext) -> types.Message:
+    """
+        Deletes last_msg in state if exists.
+        Send awaitable_msg, save it in the state and return it.
+    """
+
+    state_data = await state.get_data()
+
+    last_msg: types.Message = state_data.get('last_msg')
+    if last_msg is not None:
+        await last_msg.delete()
+
+    msg = await awaitable_msg
+    await state.update_data(last_msg=msg)
+
+    return msg

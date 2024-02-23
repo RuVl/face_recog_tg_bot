@@ -11,7 +11,7 @@ from core.config import MEDIA_DIR
 from core.database.methods.client import load_clients_profile_images, create_client, get_client
 from core.database.methods.user import check_if_admin, check_if_moderator
 from core.handlers.shared import show_client, show_clients_choosing, notify_admins
-from core.handlers.utils import download_image, find_faces, clear_temp_image
+from core.handlers.utils import download_image, find_faces, clear_temp_image, change_msg
 from core.keyboards.inline import cancel_keyboard, yes_no_cancel, add_visit_kb, admin_start_menu, moderator_start_menu, anyone_start_menu
 from core.state_machines import SharedMenu, AdminMenu, ModeratorMenu, AnyoneMenu
 from core.text import cancel_previous_processing, file_downloaded
@@ -31,8 +31,10 @@ async def check_face(msg: types.Message, state: FSMContext):
     # Face recognition is still running
     if check_face_token is not None:
         if not check_face_token.completed:
-            await msg.answer(cancel_previous_processing(),
-                             reply_markup=cancel_keyboard('Отменить'), parse_mode='MarkdownV2')
+            await change_msg(
+                msg.answer(cancel_previous_processing(), reply_markup=cancel_keyboard('Отменить'), parse_mode='MarkdownV2'),
+                state
+            )
             return
         else:
             await clear_temp_image(state)
@@ -42,7 +44,7 @@ async def check_face(msg: types.Message, state: FSMContext):
     await state.update_data(check_face_token=check_face_token)  # set token to not None
 
     # Download image from the message
-    image_path, message = await download_image(msg, check_face_token)
+    image_path, message = await download_image(msg, state, check_face_token)
     if check_face_token.completed or image_path is None:
         return
 
@@ -69,26 +71,12 @@ async def check_face(msg: types.Message, state: FSMContext):
                                 reply_markup=yes_no_cancel(None), parse_mode='MarkdownV2')
         return
 
-    # if len(clients) == 1:  # Found 1 face
-    #     client = clients[0]
-    #
-    #     # TODO save telegram_image_id for this image
-    #     profile_picture = await get_image_by_id(client.profile_picture_id)
-    #
-    #     await state.update_data(client_id=client.id, client_photo_path=profile_picture.path)
-    #     await state.set_state(SharedMenu.SHOW_FACE_INFO)
-    #
-    #     await show_client(message, state, add_visit_kb())
-    #     await message.delete()
-    # else:  # Found more than one face
     clients = await load_clients_profile_images(clients)
 
     await state.update_data(possible_clients=clients)
     await state.set_state(SharedMenu.CHOOSE_FACE)
 
     await show_clients_choosing(message, state)
-    await message.delete()
-
     check_face_token.complete()
 
 
@@ -107,19 +95,25 @@ async def return2start_menu(callback: types.CallbackQuery, state: FSMContext):
 
     if await check_if_admin(callback.from_user.id):
         await state.set_state(AdminMenu.START)
-        await callback.answer()
-        await callback.message.answer('Здравствуйте, админ 👑',
-                                      reply_markup=admin_start_menu(), parse_mode='MarkdownV2')
+        text = 'Здравствуйте, админ 👑'
+        keyboard = admin_start_menu()
+
     elif await check_if_moderator(callback.from_user.id):
         await state.set_state(ModeratorMenu.START)
-        await callback.answer()
-        await callback.message.answer('Здравствуйте, модератор 💼',
-                                      reply_markup=moderator_start_menu(), parse_mode='MarkdownV2')
+        text = 'Здравствуйте, модератор 💼'
+        keyboard = moderator_start_menu()
+
     else:
         await state.set_state(AnyoneMenu.START)
         await callback.answer()
-        await callback.message.answer('Здравствуйте, возможно вас понизили в должности ☹️',
-                                      reply_markup=anyone_start_menu(), parse_mode='MarkdownV2')
+        text = 'Здравствуйте, вас понизили в должности ☹️'
+        keyboard = anyone_start_menu()
+
+    await callback.answer()
+    await change_msg(
+        callback.message.answer(text, reply_markup=keyboard, parse_mode='MarkdownV2'),
+        state
+    )
 
 
 # /start -> 'check_face' -> document provided -> face not found
@@ -144,7 +138,7 @@ async def add_new_client(callback: types.CallbackQuery, state: FSMContext):
             await callback.answer('Клиент добавлен в базу данных!')
             await state.update_data(client_id=client.id, client_photo_path=face_path)
 
-            await show_client(callback.message, state, add_visit_kb())
+            await show_client(callback.message, state, reply_markup=add_visit_kb())
             await callback.message.delete()
 
 
@@ -170,9 +164,7 @@ async def choose_face(callback: types.CallbackQuery, state: FSMContext):
                 return
 
             await state.update_data(client_id=client.id, client_photo_path=client.profile_picture.path)
-
-            await show_client(callback.message, state, add_visit_kb())
-            await callback.message.delete()
+            await show_client(callback.message, state, reply_markup=add_visit_kb())
 
     await callback.answer()
 
@@ -183,10 +175,8 @@ async def sure2add_new_client(callback: types.CallbackQuery, state: FSMContext):
     match callback.data:
         case 'no':
             await state.set_state(SharedMenu.CHOOSE_FACE)
-            await show_clients_choosing(callback.message, state)
-
             await callback.answer()
-            await callback.message.delete()
+            await show_clients_choosing(callback.message, state)
         case 'yes':
             await add_new_client(callback, state)
 
@@ -194,7 +184,5 @@ async def sure2add_new_client(callback: types.CallbackQuery, state: FSMContext):
 # /start -> 'check_face' -> document provided -> found some faces
 @shared_recognizer_router.callback_query(PaginatorFactory.filter(F.action == 'change_page'), SharedMenu.CHOOSE_FACE)
 async def change_page(callback: types.CallbackQuery, callback_data: PaginatorFactory, state: FSMContext):
-    await show_clients_choosing(callback.message, state, callback_data.page)
-
     await callback.answer()
-    await callback.message.delete()
+    await show_clients_choosing(callback.message, state, callback_data.page)

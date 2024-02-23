@@ -3,6 +3,7 @@ from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 
 from core.filters import IsModeratorMessageFilter, IsModeratorCallbackFilter
+from core.handlers.utils import change_msg
 from core.keyboards.inline import moderator_start_menu
 from core.state_machines import ModeratorMenu
 
@@ -23,4 +24,8 @@ async def start(msg: types.Message, state: FSMContext):
     """ /start from moderator """
 
     await state.set_state(ModeratorMenu.START)
-    await msg.answer('Здравствуйте, модератор 💼', reply_markup=moderator_start_menu(), parse_mode='MarkdownV2')
+
+    await change_msg(
+        msg.answer('Здравствуйте, модератор 💼', reply_markup=moderator_start_menu(), parse_mode='MarkdownV2'),
+        state
+    )
