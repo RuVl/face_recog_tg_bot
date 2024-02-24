@@ -1,11 +1,12 @@
 import numpy as np
+from pydantic import BaseModel
 from sqlalchemy import Integer, Column, ForeignKey, JSON
 from sqlalchemy.orm import Mapped, relationship
 
 from . import Base, Visit, Image
 
 
-class Client(Base):
+class Client(Base, BaseModel):
     """
         Таблица уникальных клиентов (уникальность - разные лица).
         :param profile_picture: One-to-one relationship to Image for profile picture.

@@ -6,7 +6,7 @@ from PIL import Image, UnidentifiedImageError, ImageOps, ImageFile
 from aiogram import types, methods
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
-from cancel_token import CancellationToken
+from core.cancel_token import CancellationToken
 from deepface import DeepFace
 
 from core.config import SUPPORTED_IMAGE_TYPES, TEMP_DIR, MODEL, BACKEND

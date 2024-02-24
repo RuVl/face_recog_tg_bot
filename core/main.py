@@ -1,12 +1,15 @@
+import json
 import logging
 
 from aiogram import Dispatcher, types
 from aiogram.fsm.storage.base import BaseStorage
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.storage.redis import RedisStorage
+from redis.asyncio.client import Redis
 
 from core import bot
 from core.handlers import register_all_handlers
+from core.json_classes import TGDecoder, TGEncoder
 from core.misc.env import SettingsKeys
 
 
@@ -24,7 +27,12 @@ def get_storage() -> BaseStorage:
         return MemoryStorage()
 
     logging.info('Using redis storage')
-    return RedisStorage.from_url('redis://localhost:6379/0')
+
+    return RedisStorage(
+        Redis.from_url('redis://localhost:6379/0'),
+        json_dumps=lambda data: json.dumps(data, cls=TGEncoder),
+        json_loads=lambda data: json.loads(data, cls=TGDecoder)
+    )
 
 
 async def start_bot():

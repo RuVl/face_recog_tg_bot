@@ -3,7 +3,7 @@ from aiogram.enums import ContentType
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.types import FSInputFile
-from cancel_token import CancellationToken
+from core.cancel_token import CancellationToken
 
 from core.database.methods.image import get_image_by_id
 from core.handlers.utils import download_image, find_faces, clear_state_data, change_msg

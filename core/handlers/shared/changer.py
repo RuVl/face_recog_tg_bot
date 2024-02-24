@@ -4,7 +4,7 @@ from aiogram import types, F, Bot, Router
 from aiogram.enums import ContentType
 from aiogram.filters import or_f
 from aiogram.fsm.context import FSMContext
-from cancel_token import CancellationToken
+from core.cancel_token import CancellationToken
 
 from core.database.methods.client import client_have_visit, delete_client
 from core.database.methods.image import create_image_from_path

@@ -4,7 +4,7 @@ from aiogram import F, types, Router
 from aiogram.enums import ContentType
 from aiogram.filters import or_f
 from aiogram.fsm.context import FSMContext
-from cancel_token import CancellationToken
+from core.cancel_token import CancellationToken
 
 from core.callback_factory import PaginatorFactory
 from core.config import MEDIA_DIR
