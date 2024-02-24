@@ -27,4 +27,4 @@ class ImHostKeys:
 
 
 class SettingsKeys:
-    DEBUG: Final[bool] = environ.get('DEBUG')
+    DEBUG: Final[bool] = environ.get('DEBUG') == 'True'
