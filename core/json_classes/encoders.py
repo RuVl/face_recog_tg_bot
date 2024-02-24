@@ -6,7 +6,7 @@ from typing import Any
 from aiogram import types
 
 from core.cancel_token import CancellationToken
-from core.database.models import Client
+from core.database import models
 
 
 class TGEncoder(json.JSONEncoder):
@@ -18,34 +18,24 @@ class TGEncoder(json.JSONEncoder):
                 "_type": "pathlib.Path",
                 "_value": str(o.absolute())
             }
-
         elif (_type := type(o).__name__) in types.__all__:
             return {
-                "_type": _type,
+                "_type": f'aiogram.{_type}',
                 "_value": o.__dict__
             }
-
         elif isinstance(o, datetime):
             return {
                 "_type": "datetime.datetime",
                 "_value": o.isoformat()
             }
-
-        # elif isinstance(o, types.Message):
-        #     return {
-        #         "_type": "aiogram.Message",
-        #         "_value": o.__dict__
-        #     }
-
         elif isinstance(o, CancellationToken):
             return {
                 "_type": "CancellationToken",
                 "_value": o.__dict__
             }
-
-        elif isinstance(o, Client):
+        elif (_type := type(o).__name__) in models.__all__:
             return {
-                "_type": "models.Client",
+                "_type": f'models.{_type}',
                 "_value": o.__dict__
             }
 

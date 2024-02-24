@@ -9,3 +9,13 @@ from .visit import Visit
 
 from .user import User
 from .client import Client
+
+
+__all__ = (
+    "Location",
+    "Image",
+    "Service",
+    "Visit",
+    "User",
+    "Client",
+)

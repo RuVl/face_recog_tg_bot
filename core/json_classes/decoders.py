@@ -7,6 +7,7 @@ from aiogram import types
 
 from core import bot
 from core.cancel_token import CancellationToken
+from core.database import models
 from core.database.models import Client
 
 
@@ -24,7 +25,7 @@ class TGDecoder(json.JSONDecoder):
         match o['_type']:
             case 'pathlib.Path':
                 return Path(o['_value'])
-            case _type if _type in types.__all__:
+            case _type if _type.startswith('aiogram.') and _type[8:] in types.__all__:
                 class_ = getattr(types, _type)
                 o = class_(**o['_value'])
                 o._bot = bot
@@ -33,7 +34,8 @@ class TGDecoder(json.JSONDecoder):
                 return datetime.fromisoformat(o['_value'])
             case 'CancellationToken':
                 return CancellationToken(**o['_value'])
-            case 'models.Client':
-                return Client(**o['_value'])
+            case _type if _type.startswith('models.') and _type[7:] in types.__all__:
+                class_ = getattr(models, _type)
+                return class_(**o['_value'])
             case _:
                 return o
