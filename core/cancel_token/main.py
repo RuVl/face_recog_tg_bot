@@ -2,20 +2,20 @@ from pydantic import BaseModel
 
 
 class CancellationToken(BaseModel):
-    _canceled = False
-    _completed = False
+    is_canceled = False
+    is_completed = False
 
     def cancel(self):
-        self._canceled = True
-        self._completed = True
+        self.is_canceled = True
+        self.is_completed = True
 
     def complete(self):
-        self._completed = True
+        self.is_completed = True
 
     @property
     def cancelled(self) -> bool:
-        return self._canceled
+        return self.is_canceled
 
     @property
     def completed(self) -> bool:
-        return self._completed
+        return self.is_completed
