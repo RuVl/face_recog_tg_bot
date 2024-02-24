@@ -4,6 +4,8 @@ from pathlib import Path
 from typing import Any
 
 from aiogram import types
+
+from core import bot
 from core.cancel_token import CancellationToken
 from core.database.models import Client
 
@@ -24,7 +26,7 @@ class TGDecoder(json.JSONDecoder):
                 return Path(o['_value'])
             case _type if _type in types.__all__:
                 class_ = getattr(types, _type)
-                return class_(**o['_value'])
+                return class_(**o['_value'], _bot=bot)
             case 'datetime.datetime':
                 return datetime.fromisoformat(o['_value'])
             case 'CancellationToken':
