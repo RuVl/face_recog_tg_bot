@@ -80,7 +80,7 @@ async def delete_client(callback: types.CallbackQuery, state: FSMContext):
             await state.set_state(SharedMenu.SHOW_FACE_INFO)
             await callback.answer()
 
-            keyboard = add_visit_kb(user_id=callback.from_user.id)
+            keyboard = await add_visit_kb(user_id=callback.from_user.id)
             await show_client(callback.message, state, reply_markup=keyboard)
 
 
@@ -146,7 +146,7 @@ async def add_visit_back(callback: types.CallbackQuery, state: FSMContext):
     await state.set_state(SharedMenu.SHOW_FACE_INFO)
     await callback.answer()
 
-    keyboard = add_visit_kb(was_added=True, user_id=callback.from_user.id)
+    keyboard = await add_visit_kb(was_added=True, user_id=callback.from_user.id)
     await callback.message.edit_reply_markup(reply_markup=keyboard)
 
 

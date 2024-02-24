@@ -138,7 +138,8 @@ async def add_new_client(callback: types.CallbackQuery, state: FSMContext):
             await callback.answer('Клиент добавлен в базу данных!')
             await state.update_data(client_id=client.id, client_photo_path=face_path)
 
-            await show_client(callback.message, state, reply_markup=add_visit_kb())
+            keyboard = await add_visit_kb(user_id=callback.from_user.id)
+            await show_client(callback.message, state, reply_markup=keyboard)
             await callback.message.delete()
 
 
