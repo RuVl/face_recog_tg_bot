@@ -30,7 +30,7 @@ async def start(msg: types.Message, state: FSMContext):
 
     await change_msg(
         msg.answer('Здравствуйте, админ 👑', reply_markup=admin_start_menu(), parse_mode='MarkdownV2'),
-        state
+        state, clear_state=True
     )
 
 

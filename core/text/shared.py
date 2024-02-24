@@ -100,9 +100,9 @@ async def face_info_text(
 
     # All names with dates and locations
     name_and_date_str = '\n'.join(
-        f"{escape_markdown_v2(visit.name) if visit.name is not None else 'Отсутствует'} "
+        f"{escape_markdown_v2(visit.name) or 'Отсутствует'} "
         f"\({visit.date:%H:%M %d\.%m\.%Y}\) "
-        f"\- {escape_markdown_v2(visit.location.address) if visit.location is not None else 'отсутствует'}"
+        f"\- {escape_markdown_v2(visit.location.address) or 'отсутствует'}"
         for visit in visits
     ).strip()
 

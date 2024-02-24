@@ -11,7 +11,7 @@ from core.config import MEDIA_DIR
 from core.database.methods.client import load_clients_profile_images, create_client, get_client
 from core.database.methods.user import check_if_admin, check_if_moderator
 from core.handlers.shared import show_client, show_clients_choosing, notify_admins
-from core.handlers.utils import download_image, find_faces, clear_state, change_msg, clear_gallery, clear_path, clear_cancellation_tokens
+from core.handlers.utils import download_image, find_faces, clear_state_data, change_msg, clear_gallery, clear_path, clear_cancellation_tokens
 from core.keyboards.inline import cancel_keyboard, yes_no_cancel, add_visit_kb, admin_start_menu, moderator_start_menu, anyone_start_menu
 from core.state_machines import SharedMenu, AdminMenu, ModeratorMenu, AnyoneMenu
 from core.text import cancel_previous_processing, file_downloaded
@@ -37,7 +37,7 @@ async def check_face(msg: types.Message, state: FSMContext):
             )
             return
         else:
-            await clear_state(state)
+            await clear_state_data(state)
 
     # cancel to stop, completed if exited
     check_face_token = CancellationToken()
@@ -91,9 +91,7 @@ async def check_face(msg: types.Message, state: FSMContext):
 async def return2start_menu(callback: types.CallbackQuery, state: FSMContext):
     """ Returns user to moderator or admin menu (or nothing if user neither admin nor moderator) """
 
-    await clear_cancellation_tokens(state)
-    await clear_gallery(state)
-    await clear_path(state)
+    await clear_state_data(state)
 
     if await check_if_admin(callback.from_user.id):
         await state.set_state(AdminMenu.START)
@@ -113,7 +111,7 @@ async def return2start_menu(callback: types.CallbackQuery, state: FSMContext):
     await callback.answer()
     await change_msg(
         callback.message.answer(text, reply_markup=keyboard, parse_mode='MarkdownV2'),
-        state
+        state, clear_state=True
     )
 
 

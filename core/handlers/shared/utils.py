@@ -29,7 +29,7 @@ async def show_client(msg: types.Message, state: FSMContext,
     face_path = state_data.get('client_photo_path')
 
     if text is None:
-        text = await face_info_text(client_id)
+        text = await face_info_text(client_id, msg.from_user.id)
 
     try:
         await change_msg(

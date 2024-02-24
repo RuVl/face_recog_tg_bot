@@ -36,15 +36,18 @@ async def add_visit(callback: types.CallbackQuery, state: FSMContext):
         # Create visit
         if visit_id is None:
             await state.update_data(actions_alert=(await client_have_visit(client_id)))  # Alert to admin chat
-            await alert2admins(callback.bot, callback.from_user, state)
 
             location = await get_tg_user_location(callback.from_user.id)
             visit = await create_visit(client_id, location.id)
             await state.update_data(visit_id=visit.id)
 
+        await alert2admins(callback.bot, callback.from_user, state, is_new=(visit_id is None))
+
         await state.set_state(SharedMenu.ADD_VISIT)
         await callback.answer()
-        await callback.message.edit_reply_markup(reply_markup=add_visit_info_kb())
+
+        text = await face_info_text(client_id, callback.from_user.id)
+        await callback.message.edit_caption(caption=text, reply_markup=add_visit_info_kb())
 
 
 # /start -> 'check_face' -> face found -> 'add_visit'
@@ -73,7 +76,7 @@ async def add_visit_info(callback: types.CallbackQuery, state: FSMContext):
                                                 reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2')
 
 
-async def alert2admins(bot: Bot, user: types.User, state: FSMContext):
+async def alert2admins(bot: Bot, user: types.User, state: FSMContext, **kwargs):
     state_data = await state.get_data()
     actions_alert = state_data.get('actions_alert')
 
@@ -84,7 +87,7 @@ async def alert2admins(bot: Bot, user: types.User, state: FSMContext):
 
     match await state.get_state():
         case SharedMenu.SHOW_FACE_INFO:
-            text = created_visit(user, client_id)
+            text = created_visit(user, client_id, kwargs)
         case SharedMenu.ADD_VISIT:
             text = exit_visit(user, client_id)
         case SharedMenu.ADD_VISIT_NAME:
@@ -233,5 +236,5 @@ async def add_visit_data_back(callback: types.CallbackQuery, state: FSMContext):
     await state.set_state(SharedMenu.ADD_VISIT)
     await callback.answer()
 
-    caption = await face_info_text(client_id)
+    caption = await face_info_text(client_id, callback.from_user.id)
     await show_client(callback.message, state, text=caption, reply_markup=add_visit_info_kb())

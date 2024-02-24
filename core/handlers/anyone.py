@@ -6,7 +6,7 @@ from aiogram.types import FSInputFile
 from cancel_token import CancellationToken
 
 from core.database.methods.image import get_image_by_id
-from core.handlers.utils import download_image, find_faces, clear_state, change_msg
+from core.handlers.utils import download_image, find_faces, clear_state_data, change_msg
 from core.keyboards.inline import anyone_start_menu, cancel_keyboard
 from core.state_machines import AnyoneMenu
 from core.text import send_me_image, cancel_previous_processing, file_downloaded
@@ -25,7 +25,7 @@ async def start(msg: types.Message, state: FSMContext):
 
     await change_msg(
         msg.answer('Здравствуйте, выберите действие\.', reply_markup=anyone_start_menu(), parse_mode='MarkdownV2'),
-        state
+        state, clear_state=True
     )
 
 
@@ -109,7 +109,7 @@ async def check_if_exist_face(msg: types.Message, state: FSMContext):
 async def cancel_check_face(callback: types.CallbackQuery, state: FSMContext):
     """ Return to the main menu """
 
-    await clear_state(state)
+    await clear_state_data(state)
     await state.set_state(AnyoneMenu.START)
 
     await callback.answer()

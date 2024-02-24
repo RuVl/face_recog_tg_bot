@@ -27,5 +27,5 @@ async def start(msg: types.Message, state: FSMContext):
 
     await change_msg(
         msg.answer('Здравствуйте, модератор 💼', reply_markup=moderator_start_menu(), parse_mode='MarkdownV2'),
-        state
+        state, clear_state=True
     )

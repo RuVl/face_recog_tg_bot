@@ -199,20 +199,23 @@ async def clear_path(state: FSMContext):
         Path(document_path).unlink(missing_ok=True)
 
 
-async def clear_state(state: FSMContext):
+async def clear_state_data(state: FSMContext, *, clear_state=False):
     """ Delete file in temp_image_path and clear state """
 
     await clear_cancellation_tokens(state)
     await clear_gallery(state)
     await clear_path(state)
 
-    await state.clear()
+    if clear_state:
+        await state.clear()
 
 
-async def change_msg(awaitable_msg: methods.TelegramMethod[types.Message], state: FSMContext) -> types.Message:
+async def change_msg(awaitable_msg: methods.TelegramMethod[types.Message], state: FSMContext,
+                     *, clear_state=False) -> types.Message:
     """
         Deletes last_msg in state if exists.
         Send awaitable_msg, save it in the state and return it.
+        If clear_state is True, then state.clear()
     """
 
     state_data = await state.get_data()
@@ -223,6 +226,9 @@ async def change_msg(awaitable_msg: methods.TelegramMethod[types.Message], state
             await last_msg.delete()
         except TelegramBadRequest as e:
             logging.warning(f'Exception during delete last_msg: {e.message}')
+
+    if clear_state:
+        await state.clear()
 
     msg = await awaitable_msg
     await state.update_data(last_msg=msg)

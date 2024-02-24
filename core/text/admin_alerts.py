@@ -1,8 +1,10 @@
 from aiogram import types
 
 
-def created_visit(user: types.User, client_id: int) -> str:
-    return f'`{user.id}` \- `{user.username}` начал добавлять информацию о `{client_id}` записи\!'
+def created_visit(user: types.User, client_id: int, is_new=True) -> str:
+    return (f'`{user.id}` \- `{user.username}` начал добавлять информацию о `{client_id}` записи\!'
+            if is_new else
+            f'`{user.id}` \- `{user.username}` продолжил добавлять информацию о `{client_id}` записи\!')
 
 
 def exit_visit(user: types.User, client_id: int) -> str:
@@ -23,4 +25,3 @@ def adding_services(user: types.User, client_id: int) -> str:
 
 def adding_photos(user: types.User, client_id: int) -> str:
     return f'`{user.id}` \- `{user.username}` добавил фото к `{client_id}` записи\!'
-
