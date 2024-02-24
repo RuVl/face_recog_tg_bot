@@ -26,7 +26,7 @@ class TGDecoder(json.JSONDecoder):
             case 'pathlib.Path':
                 return Path(o['_value'])
             case _type if _type.startswith('aiogram.') and _type[8:] in types.__all__:
-                class_ = getattr(types, _type)
+                class_ = getattr(types, _type[8:])
                 o = class_(**o['_value'])
                 o._bot = bot
                 return o
@@ -35,7 +35,7 @@ class TGDecoder(json.JSONDecoder):
             case 'CancellationToken':
                 return CancellationToken(**o['_value'])
             case _type if _type.startswith('models.') and _type[7:] in types.__all__:
-                class_ = getattr(models, _type)
+                class_ = getattr(models, _type[7:])
                 return class_(**o['_value'])
             case _:
                 return o
