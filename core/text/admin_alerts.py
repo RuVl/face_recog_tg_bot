@@ -1,27 +1,27 @@
 from aiogram import types
 
 
-def created_visit(user: types.User, client_id: int, is_new=True) -> str:
+def created_visit_text(user: types.User, client_id: int, is_new: bool = True) -> str:
     return (f'`{user.id}` \- `{user.username}` начал добавлять информацию о `{client_id}` записи\!'
             if is_new else
             f'`{user.id}` \- `{user.username}` продолжил добавлять информацию о `{client_id}` записи\!')
 
 
-def exit_visit(user: types.User, client_id: int) -> str:
+def exit_visit_text(user: types.User, client_id: int) -> str:
     return f'`{user.id}` \- `{user.username}` перестал добавлять информацию о `{client_id}` записи\.'
 
 
-def adding_name(user: types.User, client_id: int) -> str:
-    return f'`{user.id}` \- `{user.username}` добавил имя к `{client_id}` записи\!'
+def adding_name_text(user: types.User, client_id: int, name: str = None) -> str:
+    return f'`{user.id}` \- `{user.username}` добавил имя: `{name or "нет информации"}` к `{client_id}` записи\!'
 
 
-def adding_contacts(user: types.User, client_id: int) -> str:
-    return f'`{user.id}` \- `{user.username}` добавил контакты к `{client_id}` записи\!'
+def adding_social_media_text(user: types.User, client_id: int, social_media: str = None) -> str:
+    return f'`{user.id}` \- `{user.username}` добавил соц\. сети: `{social_media or "нет информации"}` к `{client_id}` записи\!'
 
 
-def adding_services(user: types.User, client_id: int) -> str:
-    return f'`{user.id}` \- `{user.username}` добавил сервис к `{client_id}` записи\!'
+def adding_service_text(user: types.User, client_id: int, service: str = None) -> str:
+    return f'`{user.id}` \- `{user.username}` добавил сервис: `{service or "Нет информации"}` к `{client_id}` записи\!'
 
 
-def adding_photos(user: types.User, client_id: int) -> str:
+def adding_photo_text(user: types.User, client_id: int) -> str:
     return f'`{user.id}` \- `{user.username}` добавил фото к `{client_id}` записи\!'

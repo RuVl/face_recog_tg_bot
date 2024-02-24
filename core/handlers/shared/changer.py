@@ -16,7 +16,7 @@ from core.handlers.utils import change_msg, download_image, clear_cancellation_t
 from core.keyboards.inline import add_visit_info_kb, cancel_keyboard, add_visit_kb
 from core.misc import TgKeys
 from core.state_machines import SharedMenu
-from core.text import exit_visit, adding_name, adding_contacts, adding_services, adding_photos, face_info_text, created_visit, add_image_text, \
+from core.text import exit_visit_text, adding_name_text, adding_social_media_text, adding_service_text, adding_photo_text, face_info_text, created_visit_text, add_image_text, \
     add_service_text, add_contacts_text, add_name_text, cancel_previous_processing
 
 shared_changer_router = Router()
@@ -87,17 +87,17 @@ async def alert2admins(bot: Bot, user: types.User, state: FSMContext, **kwargs):
 
     match await state.get_state():
         case SharedMenu.SHOW_FACE_INFO:
-            text = created_visit(user, client_id, kwargs)
+            text = created_visit_text(user, client_id, kwargs)
         case SharedMenu.ADD_VISIT:
-            text = exit_visit(user, client_id)
+            text = exit_visit_text(user, client_id)
         case SharedMenu.ADD_VISIT_NAME:
-            text = adding_name(user, client_id)
+            text = adding_name_text(user, client_id, kwargs)
         case SharedMenu.ADD_VISIT_CONTACTS:
-            text = adding_contacts(user, client_id)
+            text = adding_social_media_text(user, client_id, kwargs)
         case SharedMenu.ADD_VISIT_SERVICE:
-            text = adding_services(user, client_id)
+            text = adding_service_text(user, client_id, kwargs)
         case SharedMenu.ADD_VISIT_IMAGES:
-            text = adding_photos(user, client_id)
+            text = adding_photo_text(user, client_id)
 
     await bot.send_message(TgKeys.ADMIN_GROUP_ID, text, parse_mode='MarkdownV2')
 
@@ -121,10 +121,10 @@ async def add_visit_name(msg: types.Message, state: FSMContext):
 
     name = msg.text.strip()
     if name == '':
-        await show_client(msg, state, text='Не валидное имя\!\n\n' + add_name_text(), reply_markup=cancel_keyboard('Назад'))
+        await show_client(msg, state, text=('Не валидное имя\!\n\n' + add_name_text()), reply_markup=cancel_keyboard('Назад'))
         return
 
-    await alert2admins(msg.bot, msg.from_user, state)
+    await alert2admins(msg.bot, msg.from_user, state, name=name)
 
     state_data = await state.get_data()
     visit_id = state_data.get('visit_id')
@@ -137,20 +137,20 @@ async def add_visit_name(msg: types.Message, state: FSMContext):
 
 # /start -> 'check_face' -> face found -> 'add_visit' -> 'add_contacts'
 @shared_changer_router.message(SharedMenu.ADD_VISIT_CONTACTS)
-async def add_visit_contacts(msg: types.Message, state: FSMContext):
-    """ Add visit contacts """
+async def add_visit_social_media(msg: types.Message, state: FSMContext):
+    """ Add visit's social_media """
 
-    contacts = msg.text.strip()
-    if contacts == '':
+    social_media = msg.text.strip()
+    if social_media == '':
         await show_client(msg, state, text='Не валидные контакты\!\n\n' + add_contacts_text(), reply_markup=cancel_keyboard('Назад'))
         return
 
-    await alert2admins(msg.bot, msg.from_user, state)
+    await alert2admins(msg.bot, msg.from_user, state, social_media=social_media)
 
     state_data = await state.get_data()
     visit_id = state_data.get('visit_id')
 
-    await update_visit_contacts(visit_id, contacts)
+    await update_visit_contacts(visit_id, social_media)
     await state.set_state(SharedMenu.ADD_VISIT)
 
     await show_client(msg, state, reply_markup=add_visit_info_kb())
@@ -161,17 +161,17 @@ async def add_visit_contacts(msg: types.Message, state: FSMContext):
 async def add_visit_service(msg: types.Message, state: FSMContext):
     """ Add visit services """
 
-    title = msg.text.strip()
-    if title == '':
+    service = msg.text.strip()
+    if service == '':
         await show_client(msg, state, text='Не валидный сервис\!\n\n' + add_service_text(), reply_markup=cancel_keyboard('Назад'))
         return
 
-    await alert2admins(msg.bot, msg.from_user, state)
+    await alert2admins(msg.bot, msg.from_user, state, service=service)
 
     state_data = await state.get_data()
     visit_id = state_data.get('visit_id')
 
-    await create_visit_service(visit_id, title)
+    await create_visit_service(visit_id, service)
     await state.set_state(SharedMenu.ADD_VISIT)
 
     await show_client(msg, state, reply_markup=add_visit_info_kb())
