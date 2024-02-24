@@ -23,8 +23,7 @@ class TGDecoder(json.JSONDecoder):
             case 'pathlib.Path':
                 return Path(o['_value'])
             case _type if _type in types.__all__:
-                module = __import__(types)
-                class_ = getattr(module, _type)
+                class_ = getattr(types, _type)
                 return class_(**o['_value'])
             case 'datetime.datetime':
                 return datetime.fromisoformat(o['_value'])
