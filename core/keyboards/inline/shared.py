@@ -9,7 +9,7 @@ from core.misc import client2keyboard
 def add_visit_kb(was_added=False) -> InlineKeyboardMarkup:
     """ Text for add a visit or edit-existed visit """
 
-    text = 'Редактировать' if was_added else 'Добавить информацию'
+    text = 'Редактировать' if was_added else 'Добавить визит'
 
     builder = InlineKeyboardBuilder()
     builder.row(

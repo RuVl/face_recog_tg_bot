@@ -107,7 +107,6 @@ async def return2start_menu(callback: types.CallbackQuery, state: FSMContext):
 
     else:
         await state.set_state(AnyoneMenu.START)
-        await callback.answer()
         text = 'Здравствуйте, вас понизили в должности ☹️'
         keyboard = anyone_start_menu()
 
@@ -165,7 +164,9 @@ async def choose_face(callback: types.CallbackQuery, state: FSMContext):
                 await callback.answer('Клиент не найден!')
                 return
 
+            await state.set_state(SharedMenu.SHOW_FACE_INFO)
             await state.update_data(client_id=client.id, client_photo_path=client.profile_picture.path)
+
             await show_client(callback.message, state, reply_markup=add_visit_kb())
 
     await callback.answer()
