@@ -56,7 +56,7 @@ async def add_visit(callback: types.CallbackQuery, state: FSMContext):
 
 
 @shared_changer_router.callback_query(F.data != 'cancel', SharedMenu.DELETE_CLIENT)
-async def delete_client(callback: types.CallbackQuery, state: FSMContext):
+async def delete_client_handler(callback: types.CallbackQuery, state: FSMContext):
     state_data = await state.get_data()
     client_id = state_data.get('client_id')
 
