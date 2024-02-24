@@ -78,9 +78,7 @@ async def delete_client(callback: types.CallbackQuery, state: FSMContext):
             await return2start_menu(callback, state)
         case 'no':
             await state.set_state(SharedMenu.SHOW_FACE_INFO)
-            await state.set_state(SharedMenu.SHOW_FACE_INFO)
-
-            await add_visit_back(callback, state)
+            await callback.answer()
 
             keyboard = add_visit_kb(user_id=callback.from_user.id)
             await show_client(callback.message, state, reply_markup=keyboard)
