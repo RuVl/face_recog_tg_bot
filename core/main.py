@@ -1,3 +1,5 @@
+import logging
+
 from aiogram import Dispatcher, types
 from aiogram.fsm.storage.base import BaseStorage
 from aiogram.fsm.storage.memory import MemoryStorage
@@ -18,8 +20,10 @@ async def set_default_commands(bot):
 
 def get_storage() -> BaseStorage:
     if SettingsKeys.DEBUG:
+        logging.info('Using memory storage')
         return MemoryStorage()
 
+    logging.info('Using redis storage')
     return RedisStorage.from_url('redis://localhost:6379/0')
 
 
