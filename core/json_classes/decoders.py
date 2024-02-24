@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -25,6 +26,8 @@ class TGDecoder(json.JSONDecoder):
                 module = __import__(types)
                 class_ = getattr(module, _type)
                 return class_(**o['_value'])
+            case 'datetime.datetime':
+                return datetime.fromisoformat(o['_value'])
             case 'CancellationToken':
                 return CancellationToken(**o['_value'])
             case 'models.Client':

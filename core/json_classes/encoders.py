@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -22,6 +23,12 @@ class TGEncoder(json.JSONEncoder):
             return {
                 "_type": _type,
                 "_value": o.__dict__
+            }
+
+        elif isinstance(o, datetime):
+            return {
+                "_type": "datetime.datetime",
+                "_value": o.isoformat()
             }
 
         # elif isinstance(o, types.Message):
