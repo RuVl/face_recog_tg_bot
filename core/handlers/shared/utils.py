@@ -33,8 +33,8 @@ async def show_client(msg: types.Message, state: FSMContext,
 
     try:
         await change_msg(
-            await msg.answer_photo(FSInputFile(face_path), caption=text,
-                                   reply_markup=reply_markup, parse_mode='MarkdownV2'),
+            msg.answer_photo(FSInputFile(face_path), caption=text,
+                             reply_markup=reply_markup, parse_mode='MarkdownV2'),
             state
         )
     except TelegramBadRequest as e:

@@ -84,9 +84,9 @@ async def check_face(msg: types.Message, state: FSMContext):
 @shared_recognizer_router.callback_query(F.data == 'cancel', or_f(
     SharedMenu.CHECK_FACE,
     SharedMenu.GET_BY_ID,
-    SharedMenu.SHOW_FACE_INFO,
     SharedMenu.CHOOSE_FACE,
-    SharedMenu.NOT_CHOSEN
+    SharedMenu.NOT_CHOSEN,
+    SharedMenu.SHOW_FACE_INFO
 ))
 async def return2start_menu(callback: types.CallbackQuery, state: FSMContext):
     """ Returns user to moderator or admin menu (or nothing if user neither admin nor moderator) """
