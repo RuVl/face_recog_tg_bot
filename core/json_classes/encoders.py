@@ -35,9 +35,11 @@ class TGEncoder(json.JSONEncoder):
                 "_value": o.__dict__
             }
         elif (_type := type(o).__name__) in models.__all__:
+            _value = o.__dict__
+            _value.pop('_sa_instance_state')
             return {
                 "_type": f'models.{_type}',
-                "_value": o.__dict__
+                "_value": _value
             }
         elif isinstance(o, InstanceState):
             return None
