@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import select, exists
 from sqlalchemy.orm import joinedload
 
 from core.database import session_maker
@@ -33,3 +33,11 @@ async def load_clients_profile_images(clients: list[Client]) -> list[Client]:
         query = select(Client).where(Client.id.in_(clients_id)).options(joinedload(Client.profile_picture))
         result = await session.scalars(query)
         return result.all()
+
+
+async def client_have_visit(client_id: int | str) -> bool:
+    client_id, = str2int(client_id)
+
+    async with session_maker() as session:
+        query = exists(Client.visits).where(Client.id == client_id).select()
+        return await session.scalar(query)

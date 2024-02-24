@@ -1,5 +1,5 @@
-from .get import get_all_clients, get_client, load_clients_profile_images
+from .get import get_all_clients, get_client, load_clients_profile_images, client_have_visit
 
 from .create import create_client
 
-from .check import client_have_visit
+from .delete import delete_client

@@ -8,7 +8,9 @@ class SharedMenu(StatesGroup):
     GET_BY_ID = State()  # /start -> 'get_by_id'
 
     ADD_NEW_CLIENT = State()  # 'check_face' -> face not found
-    SHOW_FACE_INFO = State()  # 'check_face' -> 1 face found
+    SHOW_FACE_INFO = State()  # 'check_face' -> 1 face found or 1 face chosen
+
+    DELETE_CLIENT = State()  # face found -> 'delete_client'
 
     CHOOSE_FACE = State()  # 'check_face' -> some face matches
     NOT_CHOSEN = State()  # some face matches -> 'add_new_client'

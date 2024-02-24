@@ -1,22 +1,26 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
+from core.database.methods.user import check_if_admin
 from core.database.models import Client
 from core.keyboards.inline.utils import paginate
 from core.misc import client2keyboard
 
 
-def add_visit_kb(was_added=False) -> InlineKeyboardMarkup:
+async def add_visit_kb(*, was_added=False, user_id: int | str = None) -> InlineKeyboardMarkup:
     """ Text for add a visit or edit-existed visit """
+
+    is_admin = await check_if_admin(user_id) if user_id is not None else False
 
     text = 'Редактировать' if was_added else 'Добавить визит'
 
     builder = InlineKeyboardBuilder()
-    builder.row(
-        InlineKeyboardButton(text=text, callback_data='add_visit')
-    ).row(
-        InlineKeyboardButton(text='Назад', callback_data='cancel')
-    )
+    builder.row(InlineKeyboardButton(text=text, callback_data='add_visit'))
+
+    if is_admin:
+        builder.row(InlineKeyboardButton(text='Удалить', callback_data='delete_client'))
+
+    builder.row(InlineKeyboardButton(text='Назад', callback_data='cancel'))
 
     return builder.as_markup()
 

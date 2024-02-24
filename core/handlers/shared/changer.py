@@ -6,18 +6,19 @@ from aiogram.filters import or_f
 from aiogram.fsm.context import FSMContext
 from cancel_token import CancellationToken
 
-from core.database.methods.client import client_have_visit
+from core.database.methods.client import client_have_visit, delete_client
 from core.database.methods.image import create_image_from_path
 from core.database.methods.service import create_visit_service
-from core.database.methods.user import get_tg_user_location
+from core.database.methods.user import get_tg_user_location, check_if_admin
 from core.database.methods.visit import create_visit, update_visit_name, update_visit_contacts
 from core.handlers.shared import show_client
+from core.handlers.shared.recogniser import return2start_menu
 from core.handlers.utils import change_msg, download_image, clear_cancellation_tokens
-from core.keyboards.inline import add_visit_info_kb, cancel_keyboard, add_visit_kb
+from core.keyboards.inline import add_visit_info_kb, cancel_keyboard, add_visit_kb, yes_no_cancel
 from core.misc import TgKeys
 from core.state_machines import SharedMenu
-from core.text import exit_visit_text, adding_name_text, adding_social_media_text, adding_service_text, adding_photo_text, face_info_text, created_visit_text, add_image_text, \
-    add_service_text, add_contacts_text, add_name_text, cancel_previous_processing
+from core.text import exit_visit_text, adding_name_text, adding_social_media_text, adding_service_text, adding_photo_text, face_info_text, \
+    created_visit_text, add_image_text, add_service_text, add_contacts_text, add_name_text, cancel_previous_processing
 
 shared_changer_router = Router()
 
@@ -27,27 +28,56 @@ shared_changer_router = Router()
 async def add_visit(callback: types.CallbackQuery, state: FSMContext):
     """ Show face info. Add a new client visit. """
 
-    if callback.data == 'add_visit':
-        state_data = await state.get_data()
+    state_data = await state.get_data()
 
-        client_id = state_data.get('client_id')
-        visit_id = state_data.get('visit_id')
+    client_id = state_data.get('client_id')
+    visit_id = state_data.get('visit_id')
 
-        # Create visit
-        if visit_id is None:
-            await state.update_data(actions_alert=(await client_have_visit(client_id)))  # Alert to admin chat
+    match callback.data:
+        case 'add_visit':
+            if visit_id is None:
+                await state.update_data(actions_alert=(await client_have_visit(client_id)))  # Alert to admin chat
 
-            location = await get_tg_user_location(callback.from_user.id)
-            visit = await create_visit(client_id, location.id)
-            await state.update_data(visit_id=visit.id)
+                location = await get_tg_user_location(callback.from_user.id)
+                visit = await create_visit(client_id, location.id)
+                await state.update_data(visit_id=visit.id)
 
-        await alert2admins(callback.bot, callback.from_user, state, is_new=(visit_id is None))
+            await alert2admins(callback.bot, callback.from_user, state, is_new=(visit_id is None))
 
-        await state.set_state(SharedMenu.ADD_VISIT)
-        await callback.answer()
+            await state.set_state(SharedMenu.ADD_VISIT)
+            await callback.answer()
 
-        text = await face_info_text(client_id, callback.from_user.id)
-        await callback.message.edit_caption(caption=text, reply_markup=add_visit_info_kb())
+            text = await face_info_text(client_id, callback.from_user.id)
+            await callback.message.edit_caption(caption=text, reply_markup=add_visit_info_kb())
+        case 'delete_client':
+            await state.set_state(SharedMenu.DELETE_CLIENT)
+            await callback.answer()
+            await callback.message.edit_caption(caption='Вы уверены?', reply_markup=yes_no_cancel(None))
+
+
+@shared_changer_router.callback_query(F.data != 'cancel', SharedMenu.DELETE_CLIENT)
+async def delete_client(callback: types.CallbackQuery, state: FSMContext):
+    state_data = await state.get_data()
+    client_id = state_data.get('client_id')
+
+    if client_id is None:
+        await callback.answer('Клиент не найден!')
+
+    match callback.data:
+        case 'yes':
+            if not await check_if_admin(callback.from_user.id):
+                await callback.bot.send_message(TgKeys.ADMIN_GROUP_ID,
+                                                text=f'`{callback.from_user.username}` попытался удалить клиента `{client_id}`\n'
+                                                     f'Отказано в доступе\.')
+                await callback.answer('Отказано в доступе!')
+                return
+
+            await delete_client(client_id)
+            await callback.answer('Удалено!')
+
+            await return2start_menu(callback, state)
+        case 'no':
+            await add_visit_back(callback, state)
 
 
 # /start -> 'check_face' -> face found -> 'add_visit'
@@ -111,7 +141,9 @@ async def add_visit_back(callback: types.CallbackQuery, state: FSMContext):
 
     await state.set_state(SharedMenu.SHOW_FACE_INFO)
     await callback.answer()
-    await callback.message.edit_reply_markup(reply_markup=add_visit_kb(True))
+
+    keyboard = add_visit_kb(was_added=True, user_id=callback.from_user.id)
+    await callback.message.edit_reply_markup(reply_markup=keyboard)
 
 
 # /start -> 'check_face' -> face found -> 'add_visit' -> 'add_name'

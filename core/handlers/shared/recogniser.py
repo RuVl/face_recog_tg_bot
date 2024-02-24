@@ -167,7 +167,9 @@ async def choose_face(callback: types.CallbackQuery, state: FSMContext):
             await state.update_data(client_id=client.id, client_photo_path=client.profile_picture.path)
 
             await clear_state_data(state)
-            await show_client(callback.message, state, reply_markup=add_visit_kb())
+
+            keyboard = await add_visit_kb(user_id=callback.from_user.id)
+            await show_client(callback.message, state, reply_markup=keyboard)
 
     await callback.answer()
 
