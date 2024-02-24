@@ -21,12 +21,12 @@ anyone_router.message.filter(
 # '/start'
 @anyone_router.message(CommandStart())
 async def start(msg: types.Message, state: FSMContext):
-    await state.set_state(AnyoneMenu.START)
-
     await change_msg(
         msg.answer('Здравствуйте, выберите действие\.', reply_markup=anyone_start_menu(), parse_mode='MarkdownV2'),
         state, clear_state=True
     )
+
+    await state.set_state(AnyoneMenu.START)
 
 
 # '/start' -> action selected

@@ -23,9 +23,9 @@ moderator_router.callback_query.filter(
 async def start(msg: types.Message, state: FSMContext):
     """ /start from moderator """
 
-    await state.set_state(ModeratorMenu.START)
-
     await change_msg(
         msg.answer('Здравствуйте, модератор 💼', reply_markup=moderator_start_menu(), parse_mode='MarkdownV2'),
         state, clear_state=True
     )
+
+    await state.set_state(ModeratorMenu.START)

@@ -94,17 +94,17 @@ async def return2start_menu(callback: types.CallbackQuery, state: FSMContext):
     await clear_state_data(state)
 
     if await check_if_admin(callback.from_user.id):
-        await state.set_state(AdminMenu.START)
+        new_state = AdminMenu.START
         text = 'Здравствуйте, админ 👑'
         keyboard = admin_start_menu()
 
     elif await check_if_moderator(callback.from_user.id):
-        await state.set_state(ModeratorMenu.START)
+        new_state = ModeratorMenu.START
         text = 'Здравствуйте, модератор 💼'
         keyboard = moderator_start_menu()
 
     else:
-        await state.set_state(AnyoneMenu.START)
+        new_state = AnyoneMenu.START
         text = 'Здравствуйте, вас понизили в должности ☹️'
         keyboard = anyone_start_menu()
 
@@ -113,6 +113,7 @@ async def return2start_menu(callback: types.CallbackQuery, state: FSMContext):
         callback.message.answer(text, reply_markup=keyboard, parse_mode='MarkdownV2'),
         state, clear_state=True
     )
+    await state.set_state(new_state)
 
 
 # /start -> 'check_face' -> document provided -> face not found

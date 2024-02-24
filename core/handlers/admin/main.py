@@ -26,12 +26,12 @@ admin_router.callback_query.filter(
 async def start(msg: types.Message, state: FSMContext):
     """ /start from admin """
 
-    await state.set_state(AdminMenu.START)
-
     await change_msg(
         msg.answer('Здравствуйте, админ 👑', reply_markup=admin_start_menu(), parse_mode='MarkdownV2'),
         state, clear_state=True
     )
+
+    await state.set_state(AdminMenu.START)
 
 
 @admin_router.callback_query(F.data.not_in(['check_face', 'get_by_id']), AdminMenu.START)
