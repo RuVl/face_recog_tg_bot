@@ -11,7 +11,7 @@ from core.config import MEDIA_DIR
 from core.database.methods.client import load_clients_profile_images, create_client, get_client
 from core.database.methods.user import check_if_admin, check_if_moderator
 from core.handlers.shared import show_client, show_clients_choosing, notify_admins
-from core.handlers.utils import download_image, find_faces, clear_temp_image, change_msg
+from core.handlers.utils import download_image, find_faces, clear_state, change_msg, clear_gallery, clear_path, clear_cancellation_tokens
 from core.keyboards.inline import cancel_keyboard, yes_no_cancel, add_visit_kb, admin_start_menu, moderator_start_menu, anyone_start_menu
 from core.state_machines import SharedMenu, AdminMenu, ModeratorMenu, AnyoneMenu
 from core.text import cancel_previous_processing, file_downloaded
@@ -37,7 +37,7 @@ async def check_face(msg: types.Message, state: FSMContext):
             )
             return
         else:
-            await clear_temp_image(state)
+            await clear_state(state)
 
     # cancel to stop, completed if exited
     check_face_token = CancellationToken()
@@ -91,11 +91,9 @@ async def check_face(msg: types.Message, state: FSMContext):
 async def return2start_menu(callback: types.CallbackQuery, state: FSMContext):
     """ Returns user to moderator or admin menu (or nothing if user neither admin nor moderator) """
 
-    state_data = await state.get_data()
-    last_msg = state_data.get('last_msg')
-
-    await clear_temp_image(state)
-    await state.update_data(last_msg=last_msg)
+    await clear_cancellation_tokens(state)
+    await clear_gallery(state)
+    await clear_path(state)
 
     if await check_if_admin(callback.from_user.id):
         await state.set_state(AdminMenu.START)

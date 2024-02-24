@@ -1,8 +1,10 @@
+import logging
 from pathlib import Path
 
 import numpy as np
 from PIL import Image, UnidentifiedImageError, ImageOps, ImageFile
 from aiogram import types, methods
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
 from cancel_token import CancellationToken
 from deepface import DeepFace
@@ -177,20 +179,32 @@ async def clear_cancellation_tokens(state: FSMContext):
         add_image_token.cancel()
 
 
-async def clear_temp_image(state: FSMContext):
-    """ Delete file in temp_image_path and clear state """
-
-    await clear_cancellation_tokens(state)
+async def clear_gallery(state: FSMContext):
     state_data = await state.get_data()
 
     face_gallery_msg: list[types.Message] = state_data.get('face_gallery_msg')
     if face_gallery_msg is not None and isinstance(face_gallery_msg, list):
         for msg in face_gallery_msg:
-            await msg.delete()
+            try:
+                await msg.delete()
+            except TelegramBadRequest as e:
+                logging.warning(f'Exception during delete gallery: {e.message}')
+
+
+async def clear_path(state: FSMContext):
+    state_data = await state.get_data()
 
     document_path = state_data.get('temp_image_path')
     if document_path is not None:
         Path(document_path).unlink(missing_ok=True)
+
+
+async def clear_state(state: FSMContext):
+    """ Delete file in temp_image_path and clear state """
+
+    await clear_cancellation_tokens(state)
+    await clear_gallery(state)
+    await clear_path(state)
 
     await state.clear()
 
@@ -205,7 +219,10 @@ async def change_msg(awaitable_msg: methods.TelegramMethod[types.Message], state
 
     last_msg: types.Message = state_data.get('last_msg')
     if last_msg is not None:
-        await last_msg.delete()
+        try:
+            await last_msg.delete()
+        except TelegramBadRequest as e:
+            logging.warning(f'Exception during delete last_msg: {e.message}')
 
     msg = await awaitable_msg
     await state.update_data(last_msg=msg)
