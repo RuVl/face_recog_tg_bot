@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any
 
 from aiogram import types
+from sqlalchemy.orm import InstanceState
 
 from core.cancel_token import CancellationToken
 from core.database import models
@@ -38,5 +39,7 @@ class TGEncoder(json.JSONEncoder):
                 "_type": f'models.{_type}',
                 "_value": o.__dict__
             }
+        elif isinstance(o, InstanceState):
+            return None
 
         return super().default(o)
