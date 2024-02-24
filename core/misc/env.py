@@ -24,3 +24,7 @@ class DBKeys:
 
 class ImHostKeys:
     API_TOKEN: Final[str] = environ.get('IM_HOST_TOKEN')
+
+
+class SettingsKeys:
+    DEBUG: Final[bool] = environ.get('DEBUG')
