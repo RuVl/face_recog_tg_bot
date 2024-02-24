@@ -26,7 +26,9 @@ class TGDecoder(json.JSONDecoder):
                 return Path(o['_value'])
             case _type if _type in types.__all__:
                 class_ = getattr(types, _type)
-                return class_(**o['_value'], _bot=bot)
+                o = class_(**o['_value'])
+                o._bot = bot
+                return o
             case 'datetime.datetime':
                 return datetime.fromisoformat(o['_value'])
             case 'CancellationToken':
