@@ -121,15 +121,15 @@ async def alert2admins(bot: Bot, user: types.User, state: FSMContext, **kwargs):
 
     match await state.get_state():
         case SharedMenu.SHOW_FACE_INFO:
-            text = created_visit_text(user, client_id, kwargs)
+            text = created_visit_text(user, client_id, **kwargs)
         case SharedMenu.ADD_VISIT:
             text = exit_visit_text(user, client_id)
         case SharedMenu.ADD_VISIT_NAME:
-            text = adding_name_text(user, client_id, kwargs)
+            text = adding_name_text(user, client_id, **kwargs)
         case SharedMenu.ADD_VISIT_CONTACTS:
-            text = adding_social_media_text(user, client_id, kwargs)
+            text = adding_social_media_text(user, client_id, **kwargs)
         case SharedMenu.ADD_VISIT_SERVICE:
-            text = adding_service_text(user, client_id, kwargs)
+            text = adding_service_text(user, client_id, **kwargs)
         case SharedMenu.ADD_VISIT_IMAGES:
             text = adding_photo_text(user, client_id)
 

@@ -140,7 +140,6 @@ async def add_new_client(callback: types.CallbackQuery, state: FSMContext):
 
             keyboard = await add_visit_kb(user_id=callback.from_user.id)
             await show_client(callback.message, state, reply_markup=keyboard)
-            await callback.message.delete()
 
 
 # /start -> 'check_face' -> document provided -> found some faces

@@ -95,7 +95,7 @@ async def show_clients_choosing(msg: types.Message, state: FSMContext, page=None
     except TelegramBadRequest as e:
         logging.warning(f'Cannot send image {e.message}')
 
-        clients_id = [client.id for client in clients2show]
+        clients_id = [str(client.id) for client in clients2show]
         await msg.bot.send_message(TgKeys.ADMIN_GROUP_ID,
                                    f'Произошла ошибка при отправке галереи из клиентов `{"`, `".join(clients_id)}`\!\n' +
                                    escape_markdown_v2('Лимиты телеграмм: https://core.telegram.org/bots/api#sending-files'),
