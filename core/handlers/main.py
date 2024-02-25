@@ -10,7 +10,10 @@ def register_all_handlers(dp: Dispatcher) -> None:
     # Keep order
     main_router.include_routers(admin_router, moderator_router, admin_moderator_router, anyone_router)
 
-    # main_router.callback_query.outer_middleware(ThrottlingMiddleware())
-    # main_router.callback_query.outer_middleware(DropEmptyButtonMiddleware())
+    throttling_middleware = ThrottlingMiddleware()
+    main_router.callback_query.outer_middleware(throttling_middleware)
+    main_router.shutdown.register(throttling_middleware.close)
+
+    main_router.callback_query.outer_middleware(DropEmptyButtonMiddleware())
 
     dp.include_router(main_router)

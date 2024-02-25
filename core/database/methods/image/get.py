@@ -22,8 +22,9 @@ async def get_client_images(client_id: int | str) -> list[Image]:
 
     async with session_maker() as session:
         query = select(Image).where(or_(
-            and_(Image.visit_id == Visit.id, Visit.client_id == client_id),
-            and_(Image.id == Client.profile_picture_id, Client.id == client_id)
-        ))
+            and_(Image.visit_id == Visit.id, Visit.client_id == client_id)
+        )).union(
+            select(Image).where(and_(Image.id == Client.profile_picture_id, Client.id == client_id))
+        )
         result = await session.scalars(query)
         return result.all()
