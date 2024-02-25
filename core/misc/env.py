@@ -22,9 +22,9 @@ class DBKeys:
     connection_string = f'postgresql+asyncpg://{USERNAME}:{PASSWORD}@{HOST}:{PORT}/{DATABASE}'
 
 
+class RedisKeys:
+    URL: Final[str] = environ.get('REDIS_URL')
+
+
 class ImHostKeys:
     API_TOKEN: Final[str] = environ.get('IM_HOST_TOKEN')
-
-
-class SettingsKeys:
-    DEBUG: Final[bool] = environ.get('DEBUG') == 'True'

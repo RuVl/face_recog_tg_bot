@@ -4,14 +4,14 @@ from typing import Awaitable, Any, Callable
 from aiogram import BaseMiddleware
 from aiogram import types
 from aiogram.dispatcher.event.bases import CancelHandler
-from aiogram.fsm.storage.base import BaseStorage
+from aiogram.fsm.storage.base import StorageKey
+
+from core.misc.utils import get_storage
 
 
 class ThrottlingMiddleware(BaseMiddleware):
-    def __init__(self, storage: BaseStorage, key_prefix: str = '_antiflood'):
-        self.prefix = key_prefix
-        self.storage = storage
-
+    def __init__(self, prefix: str = 'antiflood'):
+        self.storage = get_storage(key_builder_prefix=prefix)
         super(ThrottlingMiddleware, self).__init__()
 
     async def __call__(
@@ -24,8 +24,13 @@ class ThrottlingMiddleware(BaseMiddleware):
             logging.warning("ThrottlingMiddleware is only CallbackQuery Middleware!")
             return await handler(event, data)
 
-        # Build key
-        key = f'{self.prefix}:{event.message.chat.id}{event.from_user}:was_pressed'
+        # key for KeyBuilder
+        key = StorageKey(
+            bot_id=event.bot.id,
+            chat_id=event.message.chat.id,
+            user_id=event.message.from_user.id
+        )
+
         was_pressed: bool = await self.storage.get_data(key=key)
 
         if was_pressed:
