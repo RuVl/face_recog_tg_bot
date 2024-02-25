@@ -15,28 +15,16 @@ async def get_image_by_id(id_: int | str) -> Image:
         return await session.scalar(query)
 
 
-# async def get_client_images(client_id: int | str) -> list[Image]:
-#     """ Returns all client's images """
-#
-#     client_id, = str2int(client_id)
-#
-#     async with session_maker() as session:
-#         query = select(Image).where(or_(
-#             and_(Image.visit_id == Visit.id, Visit.client_id == client_id),
-#             and_(Image.id == Client.profile_picture_id, Client.id == client_id)
-#         ))
-#         result = await session.scalars(query)
-#         return result.all()
-
 async def get_client_images(client_id: int | str) -> list[Image]:
     """ Возвращает все изображения клиента """
 
     client_id, = str2int(client_id)
 
     async with session_maker() as session:
-        query = select(Image).outerjoin(Visit).outerjoin(Client).filter(
-            (Visit.client_id == client_id) | (Client.id == client_id)
-        )
+        query = (select(Image)
+                 .outerjoin(Visit, Image.visit_id == Visit.id)
+                 .outerjoin(Client, Image.id == Client.profile_picture_id)
+                 .where((Visit.client_id == client_id) | (Client.id == client_id)))
 
         result = await session.scalars(query)
         return result.all()
