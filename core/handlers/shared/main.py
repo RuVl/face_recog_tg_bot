@@ -1,3 +1,5 @@
+import logging
+
 from aiogram import Router, F, types
 from aiogram.filters import or_f
 from aiogram.fsm.context import FSMContext
@@ -71,6 +73,8 @@ async def get_by_id(msg: types.Message, state: FSMContext):
 
     await state.update_data(client_id=client.id, client_photo_path=profile_picture.path)
     await state.set_state(SharedMenu.SHOW_FACE_INFO)
+
+    logging.info('Show client')
 
     keyboard = await add_visit_kb(user_id=msg.from_user.id)
     await show_client(msg, state, reply_markup=keyboard)

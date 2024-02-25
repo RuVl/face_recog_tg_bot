@@ -28,10 +28,12 @@ async def show_client(msg: types.Message, state: FSMContext,
     client_id = state_data.get('client_id')
     face_path = state_data.get('client_photo_path')
 
+    logging.info('Get text')
     if text is None:
         text = await face_info_text(client_id, msg.from_user.id)
 
     try:
+        logging.info('Send message')
         await change_msg(
             msg.answer_photo(FSInputFile(face_path), caption=text,
                              reply_markup=reply_markup, parse_mode='MarkdownV2'),
