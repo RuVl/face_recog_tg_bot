@@ -85,8 +85,6 @@ async def check_if_exist_face(msg: types.Message, state: FSMContext):
 
     if len(clients) == 1:  # Found 1 face
         client = clients[0]
-
-        # TODO save telegram_image_id for this image
         profile_picture = await get_image_by_id(client.profile_picture_id)
 
         await change_msg(
