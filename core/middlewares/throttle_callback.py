@@ -34,12 +34,8 @@ class ThrottlingMiddleware(BaseMiddleware):
         was_pressed: bool = await self.storage.get_data(key=key)
 
         if was_pressed:
-            logging.info('Callback was skipped')
-
             await event.answer()
             raise SkipHandler()
-
-        logging.info("Callback wasn't skipped")
 
         await self.storage.set_data(key=key, data=True)
 
