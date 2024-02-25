@@ -40,9 +40,11 @@ class ThrottlingMiddleware(BaseMiddleware):
         await self.storage.set_data(key=key, data=True)
 
         try:
-            return await handler(event, data)
+            result = await handler(event, data)
         finally:
             await self.storage.set_data(key=key, data=False)
+
+        return result
 
     async def close(self) -> None:
         await self.storage.close()
