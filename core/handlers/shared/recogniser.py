@@ -15,6 +15,8 @@ from core.handlers.utils import download_image, find_faces, clear_state_data, ch
 from core.keyboards.inline import cancel_keyboard, yes_no_cancel, add_visit_kb, admin_start_menu, moderator_start_menu, anyone_start_menu
 from core.state_machines import SharedMenu, AdminMenu, ModeratorMenu, AnyoneMenu
 from core.text import cancel_previous_processing, file_downloaded
+from core.text.admin import hi_admin_text
+from core.text.moderator import hi_moderator_text
 
 shared_recognizer_router = Router()
 
@@ -65,7 +67,7 @@ async def check_face(msg: types.Message, state: FSMContext):
     await state.update_data(face_encoding=encoding)
 
     if clients is None:
-        await state.set_state(SharedMenu.ADD_NEW_CLIENT)
+        await state.set_state(SharedMenu.NOT_FOUND)
         await message.edit_text('Нет в базе\! 🤯\n'
                                 'Добавить такого человека?',
                                 reply_markup=yes_no_cancel(None), parse_mode='MarkdownV2')
@@ -95,12 +97,12 @@ async def return2start_menu(callback: types.CallbackQuery, state: FSMContext):
 
     if await check_if_admin(callback.from_user.id):
         new_state = AdminMenu.START
-        text = 'Здравствуйте, админ 👑'
+        text = hi_admin_text()
         keyboard = admin_start_menu()
 
     elif await check_if_moderator(callback.from_user.id):
         new_state = ModeratorMenu.START
-        text = 'Здравствуйте, модератор 💼'
+        text = hi_moderator_text()
         keyboard = moderator_start_menu()
 
     else:
@@ -117,7 +119,7 @@ async def return2start_menu(callback: types.CallbackQuery, state: FSMContext):
 
 
 # /start -> 'check_face' -> document provided -> face not found
-@shared_recognizer_router.callback_query(SharedMenu.ADD_NEW_CLIENT)
+@shared_recognizer_router.callback_query(SharedMenu.NOT_FOUND)
 async def add_new_client(callback: types.CallbackQuery, state: FSMContext):
     match callback.data:
         case 'no':
@@ -181,7 +183,7 @@ async def sure2add_new_client(callback: types.CallbackQuery, state: FSMContext):
         case 'no':
             await state.set_state(SharedMenu.CHOOSE_FACE)
             await callback.answer()
-            await show_clients_choosing(callback.message, state)
+            await show_clients_choosing(callback.message, state, delete_gallery=False)
         case 'yes':
             await add_new_client(callback, state)
 
@@ -190,4 +192,4 @@ async def sure2add_new_client(callback: types.CallbackQuery, state: FSMContext):
 @shared_recognizer_router.callback_query(PaginatorFactory.filter(F.action == 'change_page'), SharedMenu.CHOOSE_FACE)
 async def change_page(callback: types.CallbackQuery, callback_data: PaginatorFactory, state: FSMContext):
     await callback.answer()
-    await show_clients_choosing(callback.message, state, callback_data.page)
+    await show_clients_choosing(callback.message, state, page=callback_data.page)

@@ -53,7 +53,8 @@ async def show_client(msg: types.Message, state: FSMContext,
         )
 
 
-async def show_clients_choosing(msg: types.Message, state: FSMContext, page=None):
+async def show_clients_choosing(msg: types.Message, state: FSMContext,
+                                *, page=None, delete_gallery=True):
     """ Show the clients photos and buttons to choose them """
 
     COLS = 3
@@ -61,13 +62,14 @@ async def show_clients_choosing(msg: types.Message, state: FSMContext, page=None
 
     state_data = await state.get_data()
 
-    face_gallery_msg: list[types.Message] = state_data.get('face_gallery_msg')
-    if face_gallery_msg is not None and isinstance(face_gallery_msg, list):  # Delete previous gallery
-        for msg in face_gallery_msg:
-            try:
-                await msg.delete()
-            except TelegramBadRequest as e:
-                logging.warning(f'Cannot delete message: {e.message}')
+    if delete_gallery:
+        face_gallery_msg: list[types.Message] = state_data.get('face_gallery_msg')
+        if face_gallery_msg is not None and isinstance(face_gallery_msg, list):  # Delete previous gallery
+            for msg in face_gallery_msg:
+                try:
+                    await msg.delete()
+                except TelegramBadRequest as e:
+                    logging.warning(f'Cannot delete message: {e.message}')
 
     if page is None:
         page: int = state_data.get('page', 0)
@@ -82,32 +84,33 @@ async def show_clients_choosing(msg: types.Message, state: FSMContext, page=None
         )
         return
 
-    clients2show = clients[page * COLS * ROWS: (page + 1) * COLS * ROWS]
+    if delete_gallery:
+        clients2show = clients[page * COLS * ROWS: (page + 1) * COLS * ROWS]
 
-    try:
-        media_msg = await msg.answer_media_group([
-            InputMediaPhoto(
-                media=FSInputFile(client.profile_picture.path),
-                caption=f'· {client.id} ·',
-                parse_mode='MarkdownV2'
-            ) for client in clients2show
-        ])
-    except TelegramBadRequest as e:
-        logging.warning(f'Cannot send image {e.message}')
+        try:
+            media_msg = await msg.answer_media_group([
+                InputMediaPhoto(
+                    media=FSInputFile(client.profile_picture.path),
+                    caption=f'· {client.id} ·',
+                    parse_mode='MarkdownV2'
+                ) for client in clients2show
+            ])
+        except TelegramBadRequest as e:
+            logging.warning(f'Cannot send image {e.message}')
 
-        clients_id = [str(client.id) for client in clients2show]
-        await msg.bot.send_message(TgKeys.ADMIN_GROUP_ID,
-                                   f'Произошла ошибка при отправке галереи из клиентов `{"`, `".join(clients_id)}`\!\n' +
-                                   escape_markdown_v2('Лимиты телеграмм: https://core.telegram.org/bots/api#sending-files'),
-                                   parse_mode='MarkdownV2')
-        await change_msg(
-            msg.answer('Возникла ошибка при отправке фотографии\!\n'
-                       'Информация уже отправлена админам\.\n'
-                       'Приносим свои извинения за неудобство 😣',
-                       reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2'),
-            state
-        )
-        return
+            clients_id = [str(client.id) for client in clients2show]
+            await msg.bot.send_message(TgKeys.ADMIN_GROUP_ID,
+                                       f'Произошла ошибка при отправке галереи из клиентов `{"`, `".join(clients_id)}`\!\n' +
+                                       escape_markdown_v2('Лимиты телеграмм: https://core.telegram.org/bots/api#sending-files'),
+                                       parse_mode='MarkdownV2')
+            await change_msg(
+                msg.answer('Возникла ошибка при отправке фотографии\!\n'
+                           'Информация уже отправлена админам\.\n'
+                           'Приносим свои извинения за неудобство 😣',
+                           reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2'),
+                state
+            )
+            return
 
     await change_msg(
         msg.answer('Выберите этого человека из нескольких распознанных выше\.\n'
@@ -156,7 +159,7 @@ async def notify_admins(callback: types.CallbackQuery, state: FSMContext):
                 all_clients_str = ('`' + '`, `'.join([clients]) + '`') if clients else 'данные не сохранились'
                 await safe_send_photo(face_path_temp, f'{user_str} создал нового клиента при выборе:\n{all_clients_str}')
 
-        case SharedMenu.ADD_NEW_CLIENT:
+        case SharedMenu.NOT_FOUND:
             face_path_temp = state_data.get('temp_image_path')
             await safe_send_photo(face_path_temp, f'Такое лицо не было найдено в базе данных\n'
                                                   f'{user_str} добавил такое лицо в базу данных')

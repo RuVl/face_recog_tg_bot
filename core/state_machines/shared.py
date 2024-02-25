@@ -4,10 +4,13 @@ from aiogram.fsm.state import State, StatesGroup
 class SharedMenu(StatesGroup):
     """ State machine for admin and moderator menu """
 
-    CHECK_FACE = State()  # /start -> 'check_face'
+    # main.py
     GET_BY_ID = State()  # /start -> 'get_by_id'
 
-    ADD_NEW_CLIENT = State()  # 'check_face' -> face not found
+    # recognizer.py
+    CHECK_FACE = State()  # /start -> 'check_face'
+
+    NOT_FOUND = State()  # 'check_face' -> face not found
     SHOW_FACE_INFO = State()  # 'check_face' -> 1 face found or 1 face chosen
 
     DELETE_CLIENT = State()  # face found -> 'delete_client'
@@ -15,6 +18,7 @@ class SharedMenu(StatesGroup):
     CHOOSE_FACE = State()  # 'check_face' -> some face matches
     NOT_CHOSEN = State()  # some face matches -> 'add_new_client'
 
+    # changer.py
     ADD_VISIT = State()  # face found -> 'add_visit'
 
     ADD_VISIT_NAME = State()  # 'add_visit' -> 'add_name'
