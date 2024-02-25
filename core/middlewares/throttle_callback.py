@@ -45,6 +45,8 @@ class ThrottlingMiddleware(BaseMiddleware):
 
         try:
             result = await handler(event, data)
+        except Exception as e:
+            raise e
         finally:
             await self.storage.set_data(key=key, data=False)
 
