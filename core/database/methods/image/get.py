@@ -34,13 +34,7 @@ async def get_client_images(client_id: int | str) -> list[Image]:
     client_id, = str2int(client_id)
 
     async with session_maker() as session:
-        query = select(
-            Image
-        ).outerjoin(
-            Visit, Image.visit_id == Visit.id
-        ).outerjoin(
-            Client, Image.id == Client.profile_picture_id
-        ).where(
+        query = select(Image).outerjoin(Visit).outerjoin(Client).filter(
             (Visit.client_id == client_id) | (Client.id == client_id)
         )
 
