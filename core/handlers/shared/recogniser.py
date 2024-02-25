@@ -126,8 +126,6 @@ async def add_new_client(callback: types.CallbackQuery, state: FSMContext):
             await return2start_menu(callback, state)
             return
         case 'yes':
-            await notify_admins(callback, state)
-
             state_data = await state.get_data()
 
             face_path_temp = state_data.get('temp_image_path')
@@ -135,6 +133,8 @@ async def add_new_client(callback: types.CallbackQuery, state: FSMContext):
             face_encoding = state_data.get('face_encoding')
 
             client = await create_client(face_path, face_encoding)
+
+            await notify_admins(callback, state, client_id=client.id)
 
             await state.set_state(SharedMenu.SHOW_FACE_INFO)
             await callback.answer('Клиент добавлен в базу данных!')

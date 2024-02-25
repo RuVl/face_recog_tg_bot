@@ -122,7 +122,7 @@ async def show_clients_choosing(msg: types.Message, state: FSMContext,
     await state.update_data(face_gallery_msg=media_msg)
 
 
-async def notify_admins(callback: types.CallbackQuery, state: FSMContext):
+async def notify_admins(callback: types.CallbackQuery, state: FSMContext, **kwargs):
     """ Send notification to admin chat according to the current state """
 
     state_data = await state.get_data()
@@ -141,11 +141,13 @@ async def notify_admins(callback: types.CallbackQuery, state: FSMContext):
 
     match await state.get_state():
         case SharedMenu.NOT_CHOSEN:
+            client_id = kwargs.get('client_id')
+
             face_path_temp = state_data.get('temp_image_path')
             clients: list[Client] = state_data.get('possible_clients')
 
             if isinstance(clients, list) and 0 < len(clients) <= 10:
-                await safe_send_photo(face_path_temp, f'{user_str} создал нового клиента при выборе:')
+                await safe_send_photo(face_path_temp, f"{user_str} создал нового клиента `{client_id}` при выборе:")
 
                 await bot.send_media_group(
                     TgKeys.ADMIN_GROUP_ID,
@@ -157,7 +159,7 @@ async def notify_admins(callback: types.CallbackQuery, state: FSMContext):
                 )
             else:
                 all_clients_str = ('`' + '`, `'.join([clients]) + '`') if clients else 'данные не сохранились'
-                await safe_send_photo(face_path_temp, f'{user_str} создал нового клиента при выборе:\n{all_clients_str}')
+                await safe_send_photo(face_path_temp, f'{user_str} создал нового клиента `{client_id}` при выборе:\n{all_clients_str}')
 
         case SharedMenu.NOT_FOUND:
             face_path_temp = state_data.get('temp_image_path')
