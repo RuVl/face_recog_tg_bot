@@ -126,7 +126,7 @@ async def find_faces(image_path: Path, msg: types.Message, cancellation_token: C
     if cancellation_token.cancelled:
         return None, None
 
-    embeddings = filter(lambda e: e['face_confidence'] > .75, embeddings)
+    embeddings = list(filter(lambda e: e['face_confidence'] > .75, embeddings))
 
     if len(embeddings) > 1:
         await msg.edit_text(f'Обнаружено {len(embeddings)} лиц\!\n'
