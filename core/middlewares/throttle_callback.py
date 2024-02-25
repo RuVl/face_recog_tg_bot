@@ -3,7 +3,7 @@ from typing import Awaitable, Any, Callable
 
 from aiogram import BaseMiddleware
 from aiogram import types
-from aiogram.dispatcher.event.bases import CancelHandler
+from aiogram.dispatcher.event.bases import SkipHandler
 from aiogram.fsm.storage.base import StorageKey
 
 from core.misc.utils import get_storage
@@ -35,7 +35,7 @@ class ThrottlingMiddleware(BaseMiddleware):
 
         if was_pressed:
             await event.answer()
-            raise CancelHandler()  # Cancel current handler
+            raise SkipHandler()
 
         await self.storage.set_data(key=key, data=True)
 
