@@ -1,5 +1,4 @@
-from sqlalchemy import select, and_, or_
-from sqlalchemy.orm import selectinload
+from sqlalchemy import select
 
 from core.database import session_maker
 from core.database.models import Image, Visit, Client
@@ -30,14 +29,20 @@ async def get_image_by_id(id_: int | str) -> Image:
 #         return result.all()
 
 async def get_client_images(client_id: int | str) -> list[Image]:
+    """ Возвращает все изображения клиента """
+
     client_id, = str2int(client_id)
 
     async with session_maker() as session:
-        query = (
-            select(Image)
-            .join(Visit, Image.visit)
-            .join(Client, and_(Visit.client_id == client_id, or_(Visit.id == Client.profile_picture_id, Client.id == client_id)))
-            .options(selectinload(Image.visit).selectinload(Visit.client))
+        query = select(
+            Image
+        ).outerjoin(
+            Visit, Image.visit_id == Visit.id
+        ).outerjoin(
+            Client, Image.id == Client.profile_picture_id
+        ).where(
+            (Visit.client_id == client_id) | (Client.id == client_id)
         )
-        result = await session.execute(query)
-        return result.scalars().all()
+
+        result = await session.scalars(query)
+        return result.all()
