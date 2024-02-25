@@ -1,3 +1,12 @@
+def admin_menu_text() -> str:
+    return ('Меню админа 👑\n'
+            'Выберите действие с модераторами:')
+
+
+def select_moderator_text() -> str:
+    return 'Выберите модератора 💼'
+
+
 def add_moderator_text(moderator_id: int | str = 'введите', location: str = 'выберите') -> str:
     return ('Добавление модератора 💼\n'
             '\n'

@@ -37,11 +37,11 @@ def admin_menu() -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     builder.row(
         InlineKeyboardButton(
-            text='Добавить модератора',
+            text='Добавить',
             callback_data='add_moderator'
         ),
         InlineKeyboardButton(
-            text='Редактировать модераторов',
+            text='Редактировать',
             callback_data='moderators_list'
         )
     ).row(

@@ -8,6 +8,7 @@ from core.handlers.shared.recogniser import shared_recognizer_router
 from core.handlers.utils import change_msg
 from core.keyboards.inline import admin_start_menu, admin_menu
 from core.state_machines import AdminMenu
+from core.text.admin import admin_menu_text
 
 admin_router = Router()
 admin_router.include_routers(admin_menu_router, shared_recognizer_router)
@@ -42,7 +43,7 @@ async def start_menu(callback: types.CallbackQuery, state: FSMContext):
         await state.set_state(AdminMenu.ADMIN_MENU)
         await callback.answer()
 
-        await callback.message.edit_text('Меню админа 👑', reply_markup=admin_menu(), parse_mode='MarkdownV2')
+        await callback.message.edit_text(admin_menu_text(), reply_markup=admin_menu(), parse_mode='MarkdownV2')
         return
 
 

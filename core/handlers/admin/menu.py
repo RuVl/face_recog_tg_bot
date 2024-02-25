@@ -11,6 +11,7 @@ from core.handlers.utils import change_msg
 from core.keyboards.inline import cancel_keyboard, select_location, add_location, admin_menu, select_moderator, edit_moderator, yes_no_cancel
 from core.state_machines import AdminMenu
 from core.text import add_moderator_text, added_moderator_text, edit_moderator_text
+from core.text.admin import admin_menu_text, select_moderator_text
 
 admin_menu_router = Router()
 
@@ -30,7 +31,7 @@ async def handle_admin_menu(callback: types.CallbackQuery, state: FSMContext):
             await callback.answer()
 
             keyboard = await select_moderator()
-            await callback.message.edit_text('Выберите модератора 💼', reply_markup=keyboard, parse_mode='MarkdownV2')
+            await callback.message.edit_text(select_moderator_text(), reply_markup=keyboard, parse_mode='MarkdownV2')
 
 
 # /start -> 'admin_menu' -> 'add_moderator'
@@ -140,7 +141,7 @@ async def add_moderator_location(callback: types.CallbackQuery, state: FSMContex
     await state.set_state(AdminMenu.ADMIN_MENU)
     await callback.answer(added_moderator_text(updated))
 
-    await callback.message.edit_text('Меню админа 👑', reply_markup=admin_menu(), parse_mode='MarkdownV2')
+    await callback.message.edit_text(admin_menu_text(), reply_markup=admin_menu(), parse_mode='MarkdownV2')
 
 
 # /start -> 'admin_menu' -> 'add_moderator' -> id passed -> 'add_location'
@@ -186,7 +187,7 @@ async def cancel_add_moderator(callback: types.CallbackQuery, state: FSMContext)
 
     await state.set_state(AdminMenu.ADMIN_MENU)
     await callback.answer()
-    await callback.message.edit_text('Меню админа 👑', reply_markup=admin_menu(), parse_mode='MarkdownV2')
+    await callback.message.edit_text(admin_menu_text(), reply_markup=admin_menu(), parse_mode='MarkdownV2')
 
 
 # /start -> 'admin_menu' -> 'moderators_list'
@@ -195,7 +196,7 @@ async def moderators_list(callback: types.CallbackQuery, state: FSMContext):
     if callback.data == 'back':
         await state.set_state(AdminMenu.ADMIN_MENU)
         await callback.answer()
-        await callback.message.edit_text('Меню админа 👑', reply_markup=admin_menu(), parse_mode='MarkdownV2')
+        await callback.message.edit_text(admin_menu_text(), reply_markup=admin_menu(), parse_mode='MarkdownV2')
         return
 
     mod_id, mod_tg_id = callback.data.split('-')
@@ -206,7 +207,7 @@ async def moderators_list(callback: types.CallbackQuery, state: FSMContext):
                               'Повторите попытку.')
 
         keyboard = await select_moderator()
-        await callback.message.edit_text('Выберите модератора 💼', reply_markup=keyboard, parse_mode='MarkdownV2')
+        await callback.message.edit_text(select_moderator_text(), reply_markup=keyboard, parse_mode='MarkdownV2')
         return
 
     await state.update_data(edit_moderator_id=moderator.telegram_id)
@@ -236,13 +237,13 @@ async def admin_edit_moderator(callback: types.CallbackQuery, state: FSMContext)
             await state.set_state(AdminMenu.ADMIN_MENU)
 
             await callback.answer('Модератор удалён')
-            await callback.message.edit_text('Меню админа 👑', reply_markup=admin_menu(), parse_mode='MarkdownV2')
+            await callback.message.edit_text(admin_menu_text(), reply_markup=admin_menu(), parse_mode='MarkdownV2')
         case 'back':
             await state.set_state(AdminMenu.MODERATORS_LIST)
             await callback.answer()
 
             keyboard = await select_moderator()
-            await callback.message.edit_text('Выберите модератора 💼', reply_markup=keyboard, parse_mode='MarkdownV2')
+            await callback.message.edit_text(select_moderator_text(), reply_markup=keyboard, parse_mode='MarkdownV2')
             return
 
 

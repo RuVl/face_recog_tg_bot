@@ -1,7 +1,7 @@
 import logging
 
 from aiogram import types, F, Bot, Router
-from aiogram.enums import ContentType
+from aiogram.enums import ContentType, ParseMode
 from aiogram.filters import or_f
 from aiogram.fsm.context import FSMContext
 from core.cancel_token import CancellationToken
@@ -81,7 +81,9 @@ async def delete_client_handler(callback: types.CallbackQuery, state: FSMContext
             await callback.answer()
 
             keyboard = await add_visit_kb(user_id=callback.from_user.id)
-            await show_client(callback.message, state, reply_markup=keyboard)
+            text = await face_info_text(client_id, callback.from_user.id)
+
+            await callback.message.edit_caption(caption=text, reply_markup=keyboard, parse_mode='MarkdownV2')
 
 
 # /start -> 'check_face' -> face found -> 'add_visit'
