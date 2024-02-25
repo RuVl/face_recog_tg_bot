@@ -1,1 +1,3 @@
-from .main import DropEmptyButtonMiddleware
+from .empty_callback import DropEmptyButtonMiddleware
+
+from .throttle_callback import ThrottlingMiddleware

@@ -1,7 +1,7 @@
-from sqlalchemy import select, and_
+from sqlalchemy import select, and_, or_
 
 from core.database import session_maker
-from core.database.models import Image, Visit
+from core.database.models import Image, Visit, Client
 from core.misc import str2int
 
 
@@ -21,6 +21,9 @@ async def get_client_images(client_id: int | str) -> list[Image]:
     client_id, = str2int(client_id)
 
     async with session_maker() as session:
-        query = select(Image).where(and_(Image.visit_id == Visit.id, Visit.client_id == client_id))
+        query = select(Image).where(or_(
+            and_(Image.visit_id == Visit.id, Visit.client_id == client_id),
+            and_(Image.id == Client.profile_picture_id, Client.id == client_id)
+        ))
         result = await session.scalars(query)
         return result.all()

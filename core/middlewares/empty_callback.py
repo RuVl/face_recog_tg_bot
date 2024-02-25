@@ -3,6 +3,7 @@ from typing import Any, Callable, Awaitable
 
 from aiogram import BaseMiddleware
 from aiogram import types
+from aiogram.dispatcher.event.bases import CancelHandler
 
 
 class DropEmptyButtonMiddleware(BaseMiddleware):
@@ -17,6 +18,6 @@ class DropEmptyButtonMiddleware(BaseMiddleware):
 
         if event.data == 'empty_button':
             await event.answer()
-            return
+            raise CancelHandler()
 
         return await handler(event, data)

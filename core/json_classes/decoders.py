@@ -14,7 +14,7 @@ class TGDecoder(json.JSONDecoder):
     """ Write decoder for all you need in state.get_data """
 
     def __init__(self, *args, **kwargs):
-        super().__init__(object_hook=self.object_hook, *args, **kwargs)
+        super(TGDecoder, self).__init__(object_hook=self.object_hook, *args, **kwargs)
 
     # noinspection PyMethodMayBeStatic
     def object_hook(self, o: dict[str, Any]) -> Any:

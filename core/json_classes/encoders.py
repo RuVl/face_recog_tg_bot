@@ -44,4 +44,4 @@ class TGEncoder(json.JSONEncoder):
         elif isinstance(o, InstanceState):
             return None
 
-        return super().default(o)
+        return super(TGEncoder, self).default(o)
