@@ -1,1 +1,1 @@
-from .main import send_image, send_images
+from .main import send_image
