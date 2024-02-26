@@ -14,6 +14,7 @@ from core.database.methods.client import get_all_clients
 from core.database.models import Location, Visit, Client
 from core.face_recognition.main import compare_faces
 from core.misc import str2int
+from scripts.config import EXIFTOOL_PATH
 from scripts.logger import rootLogger
 
 register_heif_opener()
@@ -84,6 +85,6 @@ async def create_visit_with_date(client_id: int | str, location_id: int | str, d
 
 
 def get_date_taken(path) -> datetime | None:
-    with exiftool.ExifToolHelper() as et:
+    with exiftool.ExifToolHelper(executable=EXIFTOOL_PATH) as et:
         tags: list[dict] = et.get_tags(path, tags=["CreateDate"])
         return datetime.strptime(str(tags[0].get('EXIF:CreateDate')), "%Y:%m:%d %H:%M:%S")

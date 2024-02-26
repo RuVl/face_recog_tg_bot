@@ -1,4 +1,6 @@
 # Do not make mistakes!
+EXIFTOOL_PATH = '/mnt/h/libs/exiftool.exe'
+
 FOLDERS_INFO = [
     {
         'folder': r'/mnt/h/XXX/Сервисы-uk dd monzo wise binance grub/1 локация спб',
