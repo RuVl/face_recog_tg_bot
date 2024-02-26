@@ -1,10 +1,13 @@
 import logging
 
+import phonenumbers
 from aiogram import Router, F, types
+from aiogram.enums import ParseMode
 from aiogram.filters import or_f
 from aiogram.fsm.context import FSMContext
 
-from core.database.methods.client import get_client
+from core.config import PHONE_NUMBER_REGION
+from core.database.methods.client import get_client, get_client_by_phone
 from core.database.methods.image import get_image_by_id
 from core.filters import IsAdminOrModeratorMessageFilter, IsAdminOrModeratorCallbackFilter
 from core.handlers.shared import show_client
@@ -35,16 +38,18 @@ async def start_menu(callback: types.CallbackQuery, state: FSMContext):
 
     match callback.data:
         case 'check_face':
-            await state.set_state(SharedMenu.CHECK_FACE)
-            await callback.answer()
-            msg = await callback.message.edit_text(send_me_image(), reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2')
+            state_ = SharedMenu.CHECK_FACE
+            text = send_me_image()
         case 'get_by_id':
-            await state.set_state(SharedMenu.GET_BY_ID)
-            await callback.answer()
-            msg = await callback.message.edit_text('Отправьте мне `id` клиента в базе данных',
-                                                   reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2')
+            state_ = SharedMenu.GET_BY_ID
+            text = 'Отправьте мне `id` клиента в базе данных'
+        case 'get_by_phone_number':
+            state_ = SharedMenu.GET_BY_PHONE_NUMBER
+            text = 'Отправьте мне `номер телефона` клиента в базе данных'
 
-    await state.update_data(last_msg=msg)
+    await state.set_state(state_)
+    await callback.answer()
+    await callback.message.edit_text(text, reply_markup=cancel_keyboard('Назад'), parse_mode=ParseMode.MARKDOWN_V2)
 
 
 # /start -> 'get_by_id'
@@ -56,7 +61,7 @@ async def get_by_id(msg: types.Message, state: FSMContext):
         await change_msg(
             msg.reply('Должен быть числом\!\n\n'
                       'Отправьте мне `id` клиента в базе данных',
-                      reply_markup=cancel_keyboard(), parse_mode='MarkdownV2'),
+                      reply_markup=cancel_keyboard(), parse_mode=ParseMode.MARKDOWN_V2),
             state
         )
         return
@@ -64,7 +69,38 @@ async def get_by_id(msg: types.Message, state: FSMContext):
     client = await get_client(client_id)
     if client is None:
         await change_msg(
-            msg.answer('Не найден\!', reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2'),
+            msg.answer('Не найден\!', reply_markup=cancel_keyboard('Назад'), parse_mode=ParseMode.MARKDOWN_V2),
+            state
+        )
+        return
+
+    profile_picture = await get_image_by_id(client.profile_picture_id)
+
+    await state.update_data(client_id=client.id, client_photo_path=profile_picture.path)
+    await state.set_state(SharedMenu.SHOW_FACE_INFO)
+
+    keyboard = await add_visit_kb(user_id=msg.from_user.id)
+    await show_client(msg, state, reply_markup=keyboard)
+
+
+# /start -> 'get_by_phone_number'
+@admin_moderator_router.message(SharedMenu.GET_BY_PHONE_NUMBER)
+async def get_by_phone_number(msg: types.Message, state: FSMContext):
+    try:
+        phone_number = phonenumbers.parse(msg.text.strip(), region=PHONE_NUMBER_REGION)
+        if not phonenumbers.is_valid_number(phone_number):
+            raise phonenumbers.NumberParseException(5, 'Validation not passed!')
+    except phonenumbers.NumberParseException as e:
+        logging.info(f'User {msg.from_user.username} ({msg.from_user.id}) sent invalid phone number: {str(e)}')
+        await change_msg(
+            msg.answer('Не валидный номер\!', reply_markup=cancel_keyboard('Назад'), parse_mode=ParseMode.MARKDOWN_V2),
+            state
+        )
+
+    client = await get_client_by_phone(phone_number)
+    if client is None:
+        await change_msg(
+            msg.answer('Не найден\!', reply_markup=cancel_keyboard('Назад'), parse_mode=ParseMode.MARKDOWN_V2),
             state
         )
         return

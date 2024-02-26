@@ -1,4 +1,5 @@
 from aiogram import types, F, Router
+from aiogram.enums import ParseMode
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.filters import or_f
 from aiogram.fsm.context import FSMContext
@@ -25,13 +26,13 @@ async def handle_admin_menu(callback: types.CallbackQuery, state: FSMContext):
         case 'add_moderator':
             await state.set_state(AdminMenu.ADD_MODERATOR)
             await callback.answer()
-            await callback.message.edit_text(add_moderator_text(), reply_markup=cancel_keyboard(), parse_mode='MarkdownV2')
+            await callback.message.edit_text(add_moderator_text(), reply_markup=cancel_keyboard(), parse_mode=ParseMode.MARKDOWN_V2)
         case 'moderators_list':
             await state.set_state(AdminMenu.MODERATORS_LIST)
             await callback.answer()
 
             keyboard = await select_moderator()
-            await callback.message.edit_text(select_moderator_text(), reply_markup=keyboard, parse_mode='MarkdownV2')
+            await callback.message.edit_text(select_moderator_text(), reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN_V2)
 
 
 # /start -> 'admin_menu' -> 'add_moderator'
@@ -45,7 +46,7 @@ async def add_moderator_id(msg: types.Message, state: FSMContext):
     except ValueError:
         await change_msg(
             msg.answer('Это не похоже на id пользователя\!\n\n' + add_moderator_text(),
-                       reply_markup=cancel_keyboard(), parse_mode='MarkdownV2'),
+                       reply_markup=cancel_keyboard(), parse_mode=ParseMode.MARKDOWN_V2),
             state
         )
         return
@@ -58,7 +59,7 @@ async def add_moderator_id(msg: types.Message, state: FSMContext):
         await change_msg(
             msg.answer('Пользователь с таким id не найден, возможно из\-за настроек приватности\.\n'
                        'Всё равно добавить?',
-                       reply_markup=yes_no_cancel(), parse_mode='MarkdownV2'),
+                       reply_markup=yes_no_cancel(), parse_mode=ParseMode.MARKDOWN_V2),
             state
         )
         return
@@ -66,14 +67,14 @@ async def add_moderator_id(msg: types.Message, state: FSMContext):
     if chat.type != 'private':
         await change_msg(
             msg.answer('Это не id пользователя\!\n\n' + add_moderator_text(),
-                       reply_markup=cancel_keyboard(), parse_mode='MarkdownV2'),
+                       reply_markup=cancel_keyboard(), parse_mode=ParseMode.MARKDOWN_V2),
             state
         )
         return
 
     if await check_if_moderator(chat.id):
         await change_msg(
-            msg.answer(added_moderator_text(False), reply_markup=cancel_keyboard(), parse_mode='MarkdownV2'),
+            msg.answer(added_moderator_text(False), reply_markup=cancel_keyboard(), parse_mode=ParseMode.MARKDOWN_V2),
             state
         )
         return
@@ -83,7 +84,7 @@ async def add_moderator_id(msg: types.Message, state: FSMContext):
 
     keyboard = await select_location()
     await change_msg(
-        msg.answer(add_moderator_text(chat.id), reply_markup=keyboard, parse_mode='MarkdownV2'),
+        msg.answer(add_moderator_text(chat.id), reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN_V2),
         state
     )
 
@@ -99,7 +100,7 @@ async def add_id_anyway(callback: types.CallbackQuery, state: FSMContext):
             moderator_id = int(state_data.get("new_moderator_id"))
 
             if await check_if_moderator(moderator_id):
-                await callback.message.edit_text(added_moderator_text(False), reply_markup=cancel_keyboard(), parse_mode='MarkdownV2')
+                await callback.message.edit_text(added_moderator_text(False), reply_markup=cancel_keyboard(), parse_mode=ParseMode.MARKDOWN_V2)
                 return
 
             await state.update_data(new_moderator_id=moderator_id)
@@ -107,11 +108,11 @@ async def add_id_anyway(callback: types.CallbackQuery, state: FSMContext):
             await callback.answer()
 
             keyboard = await select_location()
-            await callback.message.edit_text(add_moderator_text(moderator_id), reply_markup=keyboard, parse_mode='MarkdownV2')
+            await callback.message.edit_text(add_moderator_text(moderator_id), reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN_V2)
         case 'no':
             await state.set_state(AdminMenu.ADD_MODERATOR)
             await callback.answer()
-            await callback.message.edit_text(add_moderator_text(), reply_markup=cancel_keyboard(), parse_mode='MarkdownV2')
+            await callback.message.edit_text(add_moderator_text(), reply_markup=cancel_keyboard(), parse_mode=ParseMode.MARKDOWN_V2)
 
 
 # /start -> 'admin_menu' -> 'add_moderator' -> id passed
@@ -125,7 +126,7 @@ async def add_moderator_location(callback: types.CallbackQuery, state: FSMContex
     if callback.data == 'add_location':
         await state.set_state(AdminMenu.ADD_LOCATION)
         await callback.answer()
-        await callback.message.edit_text(add_moderator_text(moderator_id, 'введите'), reply_markup=add_location(), parse_mode='MarkdownV2')
+        await callback.message.edit_text(add_moderator_text(moderator_id, 'введите'), reply_markup=add_location(), parse_mode=ParseMode.MARKDOWN_V2)
         return
 
     location_id, location_address = callback.data.split('-')
@@ -133,7 +134,7 @@ async def add_moderator_location(callback: types.CallbackQuery, state: FSMContex
 
     if location.address != location_address:
         await callback.answer('Что-то пошло не так.\nПовторите попытку.')
-        await callback.message.edit_text(add_moderator_text(moderator_id), reply_markup=select_location(), parse_mode='MarkdownV2')
+        await callback.message.edit_text(add_moderator_text(moderator_id), reply_markup=select_location(), parse_mode=ParseMode.MARKDOWN_V2)
         return
 
     updated = await create_or_set_moderator(moderator_id, location.id)
@@ -141,7 +142,7 @@ async def add_moderator_location(callback: types.CallbackQuery, state: FSMContex
     await state.set_state(AdminMenu.ADMIN_MENU)
     await callback.answer(added_moderator_text(updated))
 
-    await callback.message.edit_text(admin_menu_text(), reply_markup=admin_menu(), parse_mode='MarkdownV2')
+    await callback.message.edit_text(admin_menu_text(), reply_markup=admin_menu(), parse_mode=ParseMode.MARKDOWN_V2)
 
 
 # /start -> 'admin_menu' -> 'add_moderator' -> id passed -> 'add_location'
@@ -156,7 +157,7 @@ async def add_moderator_new_location(msg: types.Message, state: FSMContext):
     updated = await create_or_set_moderator(moderator_id, location.id)
 
     await change_msg(
-        msg.answer(added_moderator_text(updated), reply_markup=cancel_keyboard('Назад в меню'), parse_mode='MarkdownV2'),
+        msg.answer(added_moderator_text(updated), reply_markup=cancel_keyboard('Назад в меню'), parse_mode=ParseMode.MARKDOWN_V2),
         state
     )
 
@@ -174,7 +175,7 @@ async def add_moderator_new_location_switch(callback: types.CallbackQuery, state
         await callback.answer()
 
         keyboard = await select_location()
-        await callback.message.edit_text(add_moderator_text(moderator_id), reply_markup=keyboard, parse_mode='MarkdownV2')
+        await callback.message.edit_text(add_moderator_text(moderator_id), reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN_V2)
         return
 
 
@@ -187,7 +188,7 @@ async def cancel_add_moderator(callback: types.CallbackQuery, state: FSMContext)
 
     await state.set_state(AdminMenu.ADMIN_MENU)
     await callback.answer()
-    await callback.message.edit_text(admin_menu_text(), reply_markup=admin_menu(), parse_mode='MarkdownV2')
+    await callback.message.edit_text(admin_menu_text(), reply_markup=admin_menu(), parse_mode=ParseMode.MARKDOWN_V2)
 
 
 # /start -> 'admin_menu' -> 'moderators_list'
@@ -196,7 +197,7 @@ async def moderators_list(callback: types.CallbackQuery, state: FSMContext):
     if callback.data == 'back':
         await state.set_state(AdminMenu.ADMIN_MENU)
         await callback.answer()
-        await callback.message.edit_text(admin_menu_text(), reply_markup=admin_menu(), parse_mode='MarkdownV2')
+        await callback.message.edit_text(admin_menu_text(), reply_markup=admin_menu(), parse_mode=ParseMode.MARKDOWN_V2)
         return
 
     mod_id, mod_tg_id = callback.data.split('-')
@@ -207,7 +208,7 @@ async def moderators_list(callback: types.CallbackQuery, state: FSMContext):
                               'Повторите попытку.')
 
         keyboard = await select_moderator()
-        await callback.message.edit_text(select_moderator_text(), reply_markup=keyboard, parse_mode='MarkdownV2')
+        await callback.message.edit_text(select_moderator_text(), reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN_V2)
         return
 
     await state.update_data(edit_moderator_id=moderator.telegram_id)
@@ -215,7 +216,7 @@ async def moderators_list(callback: types.CallbackQuery, state: FSMContext):
 
     await callback.answer()
     await callback.message.edit_text(edit_moderator_text(moderator.telegram_id, moderator.username, moderator.location.address),
-                                     reply_markup=edit_moderator(), parse_mode='MarkdownV2')
+                                     reply_markup=edit_moderator(), parse_mode=ParseMode.MARKDOWN_V2)
 
 
 # /start -> 'admin_menu' -> 'moderators_list' -> moderator selected
@@ -237,13 +238,13 @@ async def admin_edit_moderator(callback: types.CallbackQuery, state: FSMContext)
             await state.set_state(AdminMenu.ADMIN_MENU)
 
             await callback.answer('Модератор удалён')
-            await callback.message.edit_text(admin_menu_text(), reply_markup=admin_menu(), parse_mode='MarkdownV2')
+            await callback.message.edit_text(admin_menu_text(), reply_markup=admin_menu(), parse_mode=ParseMode.MARKDOWN_V2)
         case 'back':
             await state.set_state(AdminMenu.MODERATORS_LIST)
             await callback.answer()
 
             keyboard = await select_moderator()
-            await callback.message.edit_text(select_moderator_text(), reply_markup=keyboard, parse_mode='MarkdownV2')
+            await callback.message.edit_text(select_moderator_text(), reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN_V2)
             return
 
 
@@ -260,7 +261,7 @@ async def moderator_change_location(callback: types.CallbackQuery, state: FSMCon
 
         await callback.message.edit_text(
             edit_moderator_text(moderator.telegram_id, moderator.username, 'введите'),
-            reply_markup=add_location(), parse_mode='MarkdownV2')
+            reply_markup=add_location(), parse_mode=ParseMode.MARKDOWN_V2)
         return
 
     loc_id, loc_address = callback.data.split('-')
@@ -271,7 +272,7 @@ async def moderator_change_location(callback: types.CallbackQuery, state: FSMCon
 
     await state.set_state(AdminMenu.EDIT_MODERATOR)
     await callback.message.edit_text(edit_moderator_text(moderator.telegram_id, moderator.username, moderator.location.address),
-                                     reply_markup=edit_moderator(), parse_mode='MarkdownV2')
+                                     reply_markup=edit_moderator(), parse_mode=ParseMode.MARKDOWN_V2)
 
 
 # /start -> 'admin_menu' -> 'moderators_list' -> moderator selected -> 'change_location' -> 'add_location'
@@ -287,7 +288,7 @@ async def moderator_add_location(msg: types.Message, state: FSMContext):
     moderator = await get_moderator_with_location(mod_tg_id)
     await change_msg(
         msg.answer(edit_moderator_text(moderator.telegram_id, moderator.username, moderator.location.address),
-                   reply_markup=edit_moderator(), parse_mode='MarkdownV2'),
+                   reply_markup=edit_moderator(), parse_mode=ParseMode.MARKDOWN_V2),
         state
     )
 

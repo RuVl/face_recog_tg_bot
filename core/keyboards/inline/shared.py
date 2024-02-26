@@ -30,8 +30,10 @@ def add_visit_info_kb() -> InlineKeyboardMarkup:
 
     builder = InlineKeyboardBuilder()
     builder.row(
-        InlineKeyboardButton(text='Добавить имя', callback_data='add_name'),
-        InlineKeyboardButton(text='Добавить контакты', callback_data='add_contacts')
+        InlineKeyboardButton(text='Добавить имя', callback_data='add_name')
+    ).row(
+        InlineKeyboardButton(text='Добавить соц сети', callback_data='add_social_media'),
+        InlineKeyboardButton(text='Добавить тел номер', callback_data='add_phone_number')
     ).row(
         InlineKeyboardButton(text='Добавить сервис', callback_data='add_service')
     ).row(

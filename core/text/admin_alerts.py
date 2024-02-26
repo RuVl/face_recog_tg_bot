@@ -1,4 +1,5 @@
 from aiogram import types
+from phonenumbers import PhoneNumber
 
 
 def created_visit_text(user: types.User, client_id: int, is_new: bool = True) -> str:
@@ -17,6 +18,10 @@ def adding_name_text(user: types.User, client_id: int, name: str = None) -> str:
 
 def adding_social_media_text(user: types.User, client_id: int, social_media: str = None) -> str:
     return f'`{user.id}` \- `{user.username}` добавил соц\. сети: `{social_media or "нет информации"}` к `{client_id}` записи\!'
+
+
+def adding_phone_number_text(user: types.User, client_id: int, phone_number: PhoneNumber = None) -> str:
+    return f'`{user.id}` \- `{user.username}` добавил тел\. номер: `{phone_number.raw_input or "нет информации"}` к `{client_id}` записи\!'
 
 
 def adding_service_text(user: types.User, client_id: int, service: str = None) -> str:

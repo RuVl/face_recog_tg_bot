@@ -24,8 +24,12 @@ def add_name_text() -> str:
     return 'Введите `имя`:'
 
 
-def add_contacts_text() -> str:
-    return 'Введите `контакты` одним сообщением:'
+def add_social_media_text() -> str:
+    return 'Введите `соц сети` одним сообщением:'
+
+
+def add_phone_number_text() -> str:
+    return 'Введите `номер телефона` одним сообщением:'
 
 
 def add_service_text() -> str:

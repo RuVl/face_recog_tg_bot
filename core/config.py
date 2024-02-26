@@ -3,6 +3,8 @@ from pathlib import Path
 MEDIA_DIR = Path(__file__).parent.parent / 'media'
 TEMP_DIR = MEDIA_DIR / 'temp'
 
+PHONE_NUMBER_REGION = 'RU'
+
 SUPPORTED_IMAGE_TYPES = {
     'image/jpeg': '.jpg',
     'image/heif': '.heic'

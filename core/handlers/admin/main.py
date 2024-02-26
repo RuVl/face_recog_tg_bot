@@ -1,4 +1,5 @@
 from aiogram import Router, F, types
+from aiogram.enums import ParseMode
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 
@@ -28,7 +29,7 @@ async def start(msg: types.Message, state: FSMContext):
     """ /start from admin """
 
     await change_msg(
-        msg.answer(hi_admin_text(), reply_markup=admin_start_menu(), parse_mode='MarkdownV2'),
+        msg.answer(hi_admin_text(), reply_markup=admin_start_menu(), parse_mode=ParseMode.MARKDOWN_V2),
         state, clear_state=True
     )
 
@@ -43,7 +44,7 @@ async def start_menu(callback: types.CallbackQuery, state: FSMContext):
         await state.set_state(AdminMenu.ADMIN_MENU)
         await callback.answer()
 
-        await callback.message.edit_text(admin_menu_text(), reply_markup=admin_menu(), parse_mode='MarkdownV2')
+        await callback.message.edit_text(admin_menu_text(), reply_markup=admin_menu(), parse_mode=ParseMode.MARKDOWN_V2)
         return
 
 
@@ -52,4 +53,4 @@ async def back(callback: types.CallbackQuery, state: FSMContext):
     await state.set_state(AdminMenu.START)
     await callback.answer()
 
-    await callback.message.edit_text(hi_admin_text(), reply_markup=admin_start_menu(), parse_mode='MarkdownV2')
+    await callback.message.edit_text(hi_admin_text(), reply_markup=admin_start_menu(), parse_mode=ParseMode.MARKDOWN_V2)

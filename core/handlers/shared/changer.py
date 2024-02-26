@@ -1,16 +1,19 @@
 import logging
 
+import phonenumbers
 from aiogram import types, F, Bot, Router
 from aiogram.enums import ContentType, ParseMode
 from aiogram.filters import or_f
 from aiogram.fsm.context import FSMContext
-from core.cancel_token import CancellationToken
 
+from core.cancel_token import CancellationToken
+from core.config import PHONE_NUMBER_REGION
 from core.database.methods.client import client_have_visit, delete_client
 from core.database.methods.image import create_image_from_path
 from core.database.methods.service import create_visit_service
 from core.database.methods.user import get_tg_user_location, check_if_admin
-from core.database.methods.visit import create_visit, update_visit_name, update_visit_contacts
+from core.database.methods.visit import create_visit, update_visit_name, update_visit_social_media
+from core.database.methods.visit.update import update_visit_phone_number
 from core.handlers.shared import show_client
 from core.handlers.shared.recogniser import return2start_menu
 from core.handlers.utils import change_msg, download_image, clear_cancellation_tokens
@@ -18,7 +21,9 @@ from core.keyboards.inline import add_visit_info_kb, cancel_keyboard, add_visit_
 from core.misc import TgKeys
 from core.state_machines import SharedMenu
 from core.text import exit_visit_text, adding_name_text, adding_social_media_text, adding_service_text, adding_photo_text, face_info_text, \
-    created_visit_text, add_image_text, add_service_text, add_contacts_text, add_name_text, cancel_previous_processing
+    created_visit_text, add_image_text, add_service_text, add_social_media_text, add_name_text, cancel_previous_processing
+from core.text.admin_alerts import adding_phone_number_text
+from core.text.shared import add_phone_number_text
 
 shared_changer_router = Router()
 
@@ -83,7 +88,7 @@ async def delete_client_handler(callback: types.CallbackQuery, state: FSMContext
             keyboard = await add_visit_kb(user_id=callback.from_user.id)
             text = await face_info_text(client_id, callback.from_user.id)
 
-            await callback.message.edit_caption(caption=text, reply_markup=keyboard, parse_mode='MarkdownV2')
+            await callback.message.edit_caption(caption=text, reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN_V2)
 
 
 # /start -> 'check_face' -> face found -> 'add_visit'
@@ -91,25 +96,29 @@ async def delete_client_handler(callback: types.CallbackQuery, state: FSMContext
 async def add_visit_info(callback: types.CallbackQuery, state: FSMContext):
     """ Handle buttons to add visit info. """
 
+    keyboard = cancel_keyboard()
+
     match callback.data:
         case 'add_name':
-            await state.set_state(SharedMenu.ADD_VISIT_NAME)
-            await callback.answer()
-            await callback.message.edit_caption(caption=add_name_text(), reply_markup=cancel_keyboard(), parse_mode='MarkdownV2')
-        case 'add_contacts':
-            await state.set_state(SharedMenu.ADD_VISIT_CONTACTS)
-            await callback.answer()
-            await callback.message.edit_caption(caption=add_contacts_text(),
-                                                reply_markup=cancel_keyboard(), parse_mode='MarkdownV2')
+            state_ = SharedMenu.ADD_VISIT_NAME
+            text = add_name_text()
+        case 'add_social_media':
+            state_ = SharedMenu.ADD_VISIT_SOCIAL_MEDIA
+            text = add_social_media_text()
+        case 'add_phone_number':
+            state_ = SharedMenu.ADD_VISIT_PHONE_NUMBER
+            text = add_phone_number_text()
         case 'add_service':
-            await state.set_state(SharedMenu.ADD_VISIT_SERVICE)
-            await callback.answer()
-            await callback.message.edit_caption(caption=add_service_text(), reply_markup=cancel_keyboard(), parse_mode='MarkdownV2')
+            state_ = SharedMenu.ADD_VISIT_SERVICE
+            text = add_service_text()
         case 'add_images':
-            await state.set_state(SharedMenu.ADD_VISIT_IMAGES)
-            await callback.answer()
-            await callback.message.edit_caption(caption=add_image_text(),
-                                                reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2')
+            state_ = SharedMenu.ADD_VISIT_IMAGES
+            text = add_image_text()
+            keyboard = cancel_keyboard('Назад')
+
+    await state.set_state(state_)
+    await callback.answer()
+    await callback.message.edit_caption(caption=text, reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN_V2)
 
 
 async def alert2admins(bot: Bot, user: types.User, state: FSMContext, **kwargs):
@@ -128,14 +137,16 @@ async def alert2admins(bot: Bot, user: types.User, state: FSMContext, **kwargs):
             text = exit_visit_text(user, client_id)
         case SharedMenu.ADD_VISIT_NAME:
             text = adding_name_text(user, client_id, **kwargs)
-        case SharedMenu.ADD_VISIT_CONTACTS:
+        case SharedMenu.ADD_VISIT_SOCIAL_MEDIA:
             text = adding_social_media_text(user, client_id, **kwargs)
+        case SharedMenu.ADD_VISIT_PHONE_NUMBER:
+            text = adding_phone_number_text(user, client_id, **kwargs)
         case SharedMenu.ADD_VISIT_SERVICE:
             text = adding_service_text(user, client_id, **kwargs)
         case SharedMenu.ADD_VISIT_IMAGES:
             text = adding_photo_text(user, client_id)
 
-    await bot.send_message(TgKeys.ADMIN_GROUP_ID, text, parse_mode='MarkdownV2')
+    await bot.send_message(TgKeys.ADMIN_GROUP_ID, text, parse_mode=ParseMode.MARKDOWN_V2)
 
 
 # /start -> 'check_face' -> face found -> 'add_visit' -> 'cancel'
@@ -173,14 +184,14 @@ async def add_visit_name(msg: types.Message, state: FSMContext):
     await show_client(msg, state, reply_markup=add_visit_info_kb())
 
 
-# /start -> 'check_face' -> face found -> 'add_visit' -> 'add_contacts'
-@shared_changer_router.message(SharedMenu.ADD_VISIT_CONTACTS)
+# /start -> 'check_face' -> face found -> 'add_visit' -> 'add_social_media'
+@shared_changer_router.message(SharedMenu.ADD_VISIT_SOCIAL_MEDIA)
 async def add_visit_social_media(msg: types.Message, state: FSMContext):
     """ Add visit's social_media """
 
     social_media = msg.text.strip()
     if social_media == '':
-        await show_client(msg, state, text='Не валидные контакты\!\n\n' + add_contacts_text(), reply_markup=cancel_keyboard('Назад'))
+        await show_client(msg, state, text='Не валидные соц сети\!\n\n' + add_social_media_text(), reply_markup=cancel_keyboard('Назад'))
         return
 
     await alert2admins(msg.bot, msg.from_user, state, social_media=social_media)
@@ -188,7 +199,31 @@ async def add_visit_social_media(msg: types.Message, state: FSMContext):
     state_data = await state.get_data()
     visit_id = state_data.get('visit_id')
 
-    await update_visit_contacts(visit_id, social_media)
+    await update_visit_social_media(visit_id, social_media)
+    await state.set_state(SharedMenu.ADD_VISIT)
+
+    await show_client(msg, state, reply_markup=add_visit_info_kb())
+
+
+# /start -> 'check_face' -> face found -> 'add_visit' -> 'add_phone_number'
+@shared_changer_router.message(SharedMenu.ADD_VISIT_PHONE_NUMBER)
+async def add_visit_phone_number(msg: types.Message, state: FSMContext):
+    """ Add visit's phone_number """
+
+    try:
+        phone_number = phonenumbers.parse(msg.text.strip(), region=PHONE_NUMBER_REGION)
+        if not phonenumbers.is_valid_number(phone_number):
+            raise phonenumbers.NumberParseException(5, 'Validation not passed!')
+    except phonenumbers.NumberParseException as e:
+        logging.info(f'User {msg.from_user.username} ({msg.from_user.id}) sent invalid phone number: {str(e)}')
+        await show_client(msg, state, text='Не валидный номер телефона\!\n\n' + add_phone_number_text(), reply_markup=cancel_keyboard('Назад'))
+
+    await alert2admins(msg.bot, msg.from_user, state, phone_number=phone_number)
+
+    state_data = await state.get_data()
+    visit_id = state_data.get('visit_id')
+
+    await update_visit_phone_number(visit_id, phone_number)
     await state.set_state(SharedMenu.ADD_VISIT)
 
     await show_client(msg, state, reply_markup=add_visit_info_kb())
@@ -227,7 +262,7 @@ async def add_visit_images(msg: types.Message, state: FSMContext):
     if add_image_token is not None:
         if not add_image_token.completed:
             await change_msg(
-                msg.answer(cancel_previous_processing(), reply_markup=cancel_keyboard('Отменить'), parse_mode='MarkdownV2'),
+                msg.answer(cancel_previous_processing(), reply_markup=cancel_keyboard('Отменить'), parse_mode=ParseMode.MARKDOWN_V2),
                 state
             )
             return
@@ -250,7 +285,7 @@ async def add_visit_images(msg: types.Message, state: FSMContext):
     except Exception as e:
         logging.error(str(e))
         await change_msg(
-            msg.reply('Не удалось загрузить на хостинг\! 😟\n\n' + add_image_text(), reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2'),
+            msg.reply('Не удалось загрузить на хостинг\! 😟\n\n' + add_image_text(), reply_markup=cancel_keyboard('Назад'), parse_mode=ParseMode.MARKDOWN_V2),
             state
         )
         return
@@ -260,7 +295,7 @@ async def add_visit_images(msg: types.Message, state: FSMContext):
 
 # /start -> 'check_face' -> face found -> 'add_visit' -> '...' -> 'cancel'
 @shared_changer_router.callback_query(F.data == 'cancel', or_f(
-    SharedMenu.ADD_VISIT_NAME, SharedMenu.ADD_VISIT_CONTACTS,
+    SharedMenu.ADD_VISIT_NAME, SharedMenu.ADD_VISIT_SOCIAL_MEDIA,
     SharedMenu.ADD_VISIT_SERVICE, SharedMenu.ADD_VISIT_IMAGES
 ))
 async def add_visit_data_back(callback: types.CallbackQuery, state: FSMContext):

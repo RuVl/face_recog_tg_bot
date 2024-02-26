@@ -2,6 +2,7 @@ import logging
 from pathlib import Path
 
 from aiogram import types
+from aiogram.enums import ParseMode
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
 from aiogram.types import FSInputFile, InputMediaPhoto
@@ -34,7 +35,7 @@ async def show_client(msg: types.Message, state: FSMContext,
     try:
         await change_msg(
             msg.answer_photo(FSInputFile(face_path), caption=text,
-                             reply_markup=reply_markup, parse_mode='MarkdownV2'),
+                             reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN_V2),
             state
         )
     except TelegramBadRequest as e:
@@ -43,12 +44,12 @@ async def show_client(msg: types.Message, state: FSMContext,
         await msg.bot.send_message(TgKeys.ADMIN_GROUP_ID,
                                    f'Произошла ошибка при отправке фотографии `{escape_markdown_v2(face_path)}` клиента `{client_id}`\!\n' +
                                    escape_markdown_v2('Лимиты телеграмм: https://core.telegram.org/bots/api#sending-files'),
-                                   parse_mode='MarkdownV2')
+                                   parse_mode=ParseMode.MARKDOWN_V2)
         await change_msg(
             msg.answer('Возникла ошибка при отправке фотографии\!\n'
                        'Информация уже отправлена админам\.\n'
                        'Приносим свои извинения за неудобство 😣',
-                       reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2'),
+                       reply_markup=cancel_keyboard('Назад'), parse_mode=ParseMode.MARKDOWN_V2),
             state
         )
 
@@ -79,7 +80,7 @@ async def show_clients_choosing(msg: types.Message, state: FSMContext,
         await change_msg(
             msg.answer('Что-то пошло не так, повторите попытку\.\n'
                        'Приносим свои извинения за неудобство 😣',
-                       reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2'),
+                       reply_markup=cancel_keyboard('Назад'), parse_mode=ParseMode.MARKDOWN_V2),
             state
         )
         return
@@ -92,7 +93,7 @@ async def show_clients_choosing(msg: types.Message, state: FSMContext,
                 InputMediaPhoto(
                     media=FSInputFile(client.profile_picture.path),
                     caption=f'· {client.id} ·',
-                    parse_mode='MarkdownV2'
+                    parse_mode=ParseMode.MARKDOWN_V2
                 ) for client in clients2show
             ])
         except TelegramBadRequest as e:
@@ -102,12 +103,12 @@ async def show_clients_choosing(msg: types.Message, state: FSMContext,
             await msg.bot.send_message(TgKeys.ADMIN_GROUP_ID,
                                        f'Произошла ошибка при отправке галереи из клиентов `{"`, `".join(clients_id)}`\!\n' +
                                        escape_markdown_v2('Лимиты телеграмм: https://core.telegram.org/bots/api#sending-files'),
-                                       parse_mode='MarkdownV2')
+                                       parse_mode=ParseMode.MARKDOWN_V2)
             await change_msg(
                 msg.answer('Возникла ошибка при отправке фотографии\!\n'
                            'Информация уже отправлена админам\.\n'
                            'Приносим свои извинения за неудобство 😣',
-                           reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2'),
+                           reply_markup=cancel_keyboard('Назад'), parse_mode=ParseMode.MARKDOWN_V2),
                 state
             )
             return
@@ -115,7 +116,7 @@ async def show_clients_choosing(msg: types.Message, state: FSMContext,
     await change_msg(
         msg.answer('Выберите этого человека из нескольких распознанных выше\.\n'
                    'Если такого человека нет \- нажмите добавить нового',
-                   reply_markup=select_clients_kb(clients, page, cols=COLS, rows=ROWS), parse_mode='MarkdownV2'),
+                   reply_markup=select_clients_kb(clients, page, cols=COLS, rows=ROWS), parse_mode=ParseMode.MARKDOWN_V2),
         state
     )
 
@@ -134,10 +135,10 @@ async def notify_admins(callback: types.CallbackQuery, state: FSMContext, **kwar
     async def safe_send_photo(path, caption):
         if path and Path(path).exists():
             await bot.send_photo(TgKeys.ADMIN_GROUP_ID, photo=FSInputFile(path),
-                                 caption=caption, parse_mode='MarkdownV2')
+                                 caption=caption, parse_mode=ParseMode.MARKDOWN_V2)
         else:
             await bot.send_message(TgKeys.ADMIN_GROUP_ID, f'`фото не найдено`' + caption,
-                                   parse_mode='MarkdownV2')
+                                   parse_mode=ParseMode.MARKDOWN_V2)
 
     match await state.get_state():
         case SharedMenu.NOT_CHOSEN:
@@ -154,7 +155,7 @@ async def notify_admins(callback: types.CallbackQuery, state: FSMContext, **kwar
                     media=[InputMediaPhoto(
                         media=FSInputFile(client.profile_picture.path),
                         caption=f'id: `{client.id}`',
-                        parse_mode='MarkdownV2'
+                        parse_mode=ParseMode.MARKDOWN_V2
                     ) for client in clients]
                 )
             else:

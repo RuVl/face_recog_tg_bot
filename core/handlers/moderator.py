@@ -1,4 +1,5 @@
 from aiogram import Router, F, types
+from aiogram.enums import ParseMode
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 
@@ -25,7 +26,7 @@ async def start(msg: types.Message, state: FSMContext):
     """ /start from moderator """
 
     await change_msg(
-        msg.answer(hi_moderator_text(), reply_markup=moderator_start_menu(), parse_mode='MarkdownV2'),
+        msg.answer(hi_moderator_text(), reply_markup=moderator_start_menu(), parse_mode=ParseMode.MARKDOWN_V2),
         state, clear_state=True
     )
 

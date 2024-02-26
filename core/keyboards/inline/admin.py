@@ -23,6 +23,11 @@ def admin_start_menu() -> InlineKeyboardMarkup:
         )
     ).row(
         InlineKeyboardButton(
+            text='Найти по тел номеру',
+            callback_data='get_by_phone_number'
+        )
+    ).row(
+        InlineKeyboardButton(
             text='Меню админа',
             callback_data='admin_menu'
         )

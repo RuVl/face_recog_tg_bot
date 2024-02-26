@@ -6,6 +6,7 @@ class SharedMenu(StatesGroup):
 
     # main.py
     GET_BY_ID = State()  # /start -> 'get_by_id'
+    GET_BY_PHONE_NUMBER = State()  # /start -> 'get_by_phone_number'
 
     # recognizer.py
     CHECK_FACE = State()  # /start -> 'check_face'
@@ -22,7 +23,9 @@ class SharedMenu(StatesGroup):
     ADD_VISIT = State()  # face found -> 'add_visit'
 
     ADD_VISIT_NAME = State()  # 'add_visit' -> 'add_name'
-    ADD_VISIT_CONTACTS = State()  # 'add_visit' -> 'add_contact'
+
+    ADD_VISIT_SOCIAL_MEDIA = State()  # 'add_visit' -> 'add_social_media'
+    ADD_VISIT_PHONE_NUMBER = State()  # 'add_visit' -> 'add_phone_number'
 
     ADD_VISIT_SERVICE = State()  # 'add_visit' -> 'add_service'
     ADD_VISIT_IMAGES = State()  # 'add_visit' -> 'add_images'

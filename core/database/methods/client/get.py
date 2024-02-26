@@ -1,8 +1,9 @@
+from phonenumbers import PhoneNumber
 from sqlalchemy import select, exists
 from sqlalchemy.orm import joinedload
 
 from core.database import session_maker
-from core.database.models import Client
+from core.database.models import Client, Visit
 from core.misc import str2int
 
 
@@ -20,6 +21,15 @@ async def get_client(client_id: int | str, with_profile_image=False) -> Client:
         query = select(Client).where(Client.id == client_id)
         if with_profile_image:
             query.options(joinedload(Client.profile_picture))
+
+        return await session.scalar(query)
+
+
+async def get_client_by_phone(phone_number: PhoneNumber) -> Client:
+    async with session_maker() as session:
+        query = (select(Client)
+                 .outerjoin(Visit, Client.id == Visit.client_id)
+                 .where(Visit.phone_number == phone_number))
 
         return await session.scalar(query)
 

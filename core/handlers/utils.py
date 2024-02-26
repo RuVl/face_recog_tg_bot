@@ -4,6 +4,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image, UnidentifiedImageError, ImageOps, ImageFile
 from aiogram import types, methods
+from aiogram.enums import ParseMode
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
 from core.cancel_token import CancellationToken
@@ -28,7 +29,7 @@ async def download_image(msg: types.Message, state: FSMContext, cancellation_tok
     # File is too big
     if msg.document.file_size > 10 * 1024 * 1024:
         message = await change_msg(
-            msg.reply('Файл слишком большой\! \(Не более 10мб\) 😖', reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2'),
+            msg.reply('Файл слишком большой\! \(Не более 10мб\) 😖', reply_markup=cancel_keyboard('Назад'), parse_mode=ParseMode.MARKDOWN_V2),
             state
         )
         cancellation_token.complete()
@@ -37,14 +38,14 @@ async def download_image(msg: types.Message, state: FSMContext, cancellation_tok
     # Unsupported file type
     if msg.document.mime_type not in SUPPORTED_IMAGE_TYPES.keys():
         message = await change_msg(
-            msg.reply('Файл неподдерживаемого формата\! 😩', reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2'),
+            msg.reply('Файл неподдерживаемого формата\! 😩', reply_markup=cancel_keyboard('Назад'), parse_mode=ParseMode.MARKDOWN_V2),
             state
         )
         cancellation_token.complete()
         return None, message
 
     message = await change_msg(
-        msg.answer('Скачивание файла\. 📄', reply_markup=cancel_keyboard(), parse_mode='MarkdownV2'),
+        msg.answer('Скачивание файла\. 📄', reply_markup=cancel_keyboard(), parse_mode=ParseMode.MARKDOWN_V2),
         state
     )
 
@@ -64,7 +65,7 @@ async def download_image(msg: types.Message, state: FSMContext, cancellation_tok
     if not document_path.exists():
         await message.edit_text('Загрузка файла не удалась\. 😭\n'
                                 'Попробуйте ещё раз или обратитесь к админам\.',
-                                reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2')
+                                reply_markup=cancel_keyboard('Назад'), parse_mode=ParseMode.MARKDOWN_V2)
         cancellation_token.complete()
         return None, message
 
@@ -80,14 +81,14 @@ async def download_image(msg: types.Message, state: FSMContext, cancellation_tok
 
         if w + h > 10000:
             await message.edit_text('Ширина и высота фотографии в сумме не должны превышать 10000\!',
-                                    reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2')
+                                    reply_markup=cancel_keyboard('Назад'), parse_mode=ParseMode.MARKDOWN_V2)
             document_path.unlink(missing_ok=True)
             cancellation_token.complete()
             return None, message
 
         if max(w, h) / min(w, h) > 20:
             await message.edit_text('Соотношение высоты к ширине не должно превышать 20\.',
-                                    reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2')
+                                    reply_markup=cancel_keyboard('Назад'), parse_mode=ParseMode.MARKDOWN_V2)
 
             document_path.unlink(missing_ok=True)
             cancellation_token.complete()
@@ -100,7 +101,7 @@ async def download_image(msg: types.Message, state: FSMContext, cancellation_tok
     except UnidentifiedImageError:
         await message.edit_text('Файл повреждён и не может быть обработан\!\n'
                                 'Попробуйте другую отправить фотографию\.',
-                                reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2')
+                                reply_markup=cancel_keyboard('Назад'), parse_mode=ParseMode.MARKDOWN_V2)
 
         document_path.unlink(missing_ok=True)
         cancellation_token.complete()
@@ -132,20 +133,20 @@ async def find_faces(image_path: Path, msg: types.Message, cancellation_token: C
         await msg.edit_text(f'Обнаружено {len(embeddings)} лиц\!\n'
                             f'На фотографии должен быть только 1 человек\.\n'
                             f'Попробуйте отправить другую фотографию\.',
-                            reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2')
+                            reply_markup=cancel_keyboard('Назад'), parse_mode=ParseMode.MARKDOWN_V2)
         cancellation_token.complete()
         return None, None
 
     if len(embeddings) == 0:
         await msg.edit_text('Ни одного лица на фотографии не обнаружено\!\n'
                             'Попробуйте отправить другую фотографию\.',
-                            reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2')
+                            reply_markup=cancel_keyboard('Назад'), parse_mode=ParseMode.MARKDOWN_V2)
         cancellation_token.complete()
         return None, None
 
     await msg.edit_text('📇 Обнаружено 1 лицо\!\n'
                         'Поиск совпадений в базе данных\. 🗄',
-                        reply_markup=cancel_keyboard(), parse_mode='MarkdownV2')
+                        reply_markup=cancel_keyboard(), parse_mode=ParseMode.MARKDOWN_V2)
 
     face = embeddings[0]
 

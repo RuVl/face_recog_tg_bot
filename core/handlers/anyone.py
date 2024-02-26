@@ -1,5 +1,5 @@
 from aiogram import Router, F, types
-from aiogram.enums import ContentType
+from aiogram.enums import ContentType, ParseMode
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.types import FSInputFile
@@ -22,7 +22,7 @@ anyone_router.message.filter(
 @anyone_router.message(CommandStart())
 async def start(msg: types.Message, state: FSMContext):
     await change_msg(
-        msg.answer('Здравствуйте, выберите действие\.', reply_markup=anyone_start_menu(), parse_mode='MarkdownV2'),
+        msg.answer('Здравствуйте, выберите действие\.', reply_markup=anyone_start_menu(), parse_mode=ParseMode.MARKDOWN_V2),
         state, clear_state=True
     )
 
@@ -36,7 +36,7 @@ async def start_menu(callback: types.CallbackQuery, state: FSMContext):
         case 'check_if_exist':
             await state.set_state(AnyoneMenu.CHECK_IF_EXIST)
             await callback.answer()
-            await callback.message.edit_text(send_me_image(), reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2')
+            await callback.message.edit_text(send_me_image(), reply_markup=cancel_keyboard('Назад'), parse_mode=ParseMode.MARKDOWN_V2)
 
 
 # '/start' -> 'check_if_exist' -> document provided
@@ -50,7 +50,7 @@ async def check_if_exist_face(msg: types.Message, state: FSMContext):
     # Face recognition is still running
     if check_face_token is not None and not check_face_token.completed:
         await msg.answer(cancel_previous_processing(),
-                         reply_markup=cancel_keyboard('Отменить'), parse_mode='MarkdownV2')
+                         reply_markup=cancel_keyboard('Отменить'), parse_mode=ParseMode.MARKDOWN_V2)
         return
 
     # cancel to stop, completed if exited
@@ -64,7 +64,7 @@ async def check_if_exist_face(msg: types.Message, state: FSMContext):
 
     await state.update_data(temp_image_path=image_path)
     await message.edit_text(file_downloaded(),
-                            reply_markup=cancel_keyboard(), parse_mode='MarkdownV2')
+                            reply_markup=cancel_keyboard(), parse_mode=ParseMode.MARKDOWN_V2)
 
     clients, encoding = await find_faces(image_path, message, check_face_token)
 
@@ -73,14 +73,14 @@ async def check_if_exist_face(msg: types.Message, state: FSMContext):
 
     if encoding is None:
         await message.edit_text('Распознавание лиц не удалось, повторите попытку\.',
-                                reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2')
+                                reply_markup=cancel_keyboard('Назад'), parse_mode=ParseMode.MARKDOWN_V2)
         return
 
     await state.update_data(face_encoding=encoding)
 
     if clients is None:
         await message.edit_text('Нет в базе\!',
-                                reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2')
+                                reply_markup=cancel_keyboard('Назад'), parse_mode=ParseMode.MARKDOWN_V2)
         return
 
     if len(clients) == 1:  # Found 1 face
@@ -89,14 +89,14 @@ async def check_if_exist_face(msg: types.Message, state: FSMContext):
 
         await change_msg(
             message.answer_photo(FSInputFile(profile_picture.path), caption=f'*id в базе:* `{client.id}`',
-                                 reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2'),
+                                 reply_markup=cancel_keyboard('Назад'), parse_mode=ParseMode.MARKDOWN_V2),
             state
         )
     else:  # Found more than one face
         await message.edit_text(
             'Найдено более одного совпадения в базе данных\.\n'
             'В целях конфиденциальности мы не можем показать результаты 😟',
-            reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2'
+            reply_markup=cancel_keyboard('Назад'), parse_mode=ParseMode.MARKDOWN_V2
         )
 
     check_face_token.complete()
@@ -112,6 +112,6 @@ async def cancel_check_face(callback: types.CallbackQuery, state: FSMContext):
 
     await callback.answer()
     await change_msg(
-        callback.message.answer('Здравствуйте, выберите действие\.', reply_markup=anyone_start_menu(), parse_mode='MarkdownV2'),
+        callback.message.answer('Здравствуйте, выберите действие\.', reply_markup=anyone_start_menu(), parse_mode=ParseMode.MARKDOWN_V2),
         state
     )

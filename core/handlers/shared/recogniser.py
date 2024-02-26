@@ -1,7 +1,7 @@
 import shutil
 
 from aiogram import F, types, Router
-from aiogram.enums import ContentType
+from aiogram.enums import ContentType, ParseMode
 from aiogram.filters import or_f
 from aiogram.fsm.context import FSMContext
 from core.cancel_token import CancellationToken
@@ -34,7 +34,7 @@ async def check_face(msg: types.Message, state: FSMContext):
     if check_face_token is not None:
         if not check_face_token.completed:
             await change_msg(
-                msg.answer(cancel_previous_processing(), reply_markup=cancel_keyboard('Отменить'), parse_mode='MarkdownV2'),
+                msg.answer(cancel_previous_processing(), reply_markup=cancel_keyboard('Отменить'), parse_mode=ParseMode.MARKDOWN_V2),
                 state
             )
             return
@@ -52,7 +52,7 @@ async def check_face(msg: types.Message, state: FSMContext):
 
     await state.update_data(temp_image_path=image_path)
     await message.edit_text(file_downloaded(),
-                            reply_markup=cancel_keyboard(), parse_mode='MarkdownV2')
+                            reply_markup=cancel_keyboard(), parse_mode=ParseMode.MARKDOWN_V2)
 
     clients, encoding = await find_faces(image_path, message, check_face_token)
 
@@ -61,7 +61,7 @@ async def check_face(msg: types.Message, state: FSMContext):
 
     if encoding is None:
         await message.edit_text('Распознавание лиц не удалось, повторите попытку\.',
-                                reply_markup=cancel_keyboard('Назад'), parse_mode='MarkdownV2')
+                                reply_markup=cancel_keyboard('Назад'), parse_mode=ParseMode.MARKDOWN_V2)
         return
 
     await state.update_data(face_encoding=encoding)
@@ -70,7 +70,7 @@ async def check_face(msg: types.Message, state: FSMContext):
         await state.set_state(SharedMenu.NOT_FOUND)
         await message.edit_text('Нет в базе\! 🤯\n'
                                 'Добавить такого человека?',
-                                reply_markup=yes_no_cancel(None), parse_mode='MarkdownV2')
+                                reply_markup=yes_no_cancel(None), parse_mode=ParseMode.MARKDOWN_V2)
         return
 
     clients = await load_clients_profile_images(clients)
@@ -112,7 +112,7 @@ async def return2start_menu(callback: types.CallbackQuery, state: FSMContext):
 
     await callback.answer()
     await change_msg(
-        callback.message.answer(text, reply_markup=keyboard, parse_mode='MarkdownV2'),
+        callback.message.answer(text, reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN_V2),
         state, clear_state=True
     )
     await state.set_state(new_state)
@@ -153,7 +153,7 @@ async def choose_face(callback: types.CallbackQuery, state: FSMContext):
         case 'add_new_client':
             await state.set_state(SharedMenu.NOT_CHOSEN)
             await callback.message.edit_text('Вы уверены?',
-                                             reply_markup=yes_no_cancel(), parse_mode='MarkdownV2')
+                                             reply_markup=yes_no_cancel(), parse_mode=ParseMode.MARKDOWN_V2)
         case client_id:
             try:
                 client = await get_client(client_id, True)
