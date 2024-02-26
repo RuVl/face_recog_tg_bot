@@ -25,10 +25,7 @@ async def get_client(client_id: int | str, with_profile_image=False) -> Client |
         return await session.scalar(query)
 
 
-async def get_client_by_phone(phone_number: PhoneNumber | str, with_profile_image=False) -> Client | None:
-    if isinstance(phone_number, PhoneNumber):
-        phone_number = phone_number.raw_input
-
+async def get_client_by_phone(phone_number: PhoneNumber, with_profile_image=False) -> Client | None:
     async with session_maker() as session:
         query = (select(Client)
                  .join(Visit, Client.id == Visit.client_id)
