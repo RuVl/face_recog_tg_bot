@@ -14,8 +14,8 @@ async def fix_exif():
         visits = (await session.scalars(visits_query)).all()
 
         for visit in visits:
-            client = await visit.client
-            image = await client.profile_picture
+            client = visit.client
+            image = client.profile_picture
 
             dt = get_date_taken(image.path)
             if dt is None:
