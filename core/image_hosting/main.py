@@ -1,27 +1,33 @@
 import logging
+import shutil
+from pathlib import Path
 from typing import Any
 
 import aiohttp
-from pathlib import Path
-
 from aiohttp.web_exceptions import HTTPException
 
 from core.image_hosting.config import API_URL
-from core.image_hosting.utils import prepare_path, parse_response
+from core.image_hosting.utils import prepare_path, parse_response, get_available_filepath
 from core.misc.env import ImHostKeys
 
 
-async def send_image(path: str | Path) -> dict[str, Any]:
+async def send_image(path: str | Path, dir2copy: str | Path, base_name: str = None) -> dict[str, Any]:
     """ Send an image to the photo hosting server.  """
 
+    if base_name is None:
+        base_name = path.stem[-5:]
+
     path = prepare_path(path)
+    new_path = get_available_filepath(dir2copy, base_name, path.suffix)
+
+    shutil.copy2(path, new_path)
 
     params = dict(key=ImHostKeys.API_TOKEN)
     post_data = aiohttp.FormData()
 
     logging.info(f"Sending image {path} to photo hosting")
     async with aiohttp.ClientSession() as session:
-        with open(path, 'rb') as f:
+        with open(new_path, 'rb') as f:
             post_data.add_field('image', f)
 
             # Do not close file before send request
@@ -32,29 +38,3 @@ async def send_image(path: str | Path) -> dict[str, Any]:
                     raise HTTPException(text="Can't post image!")
 
     return parse_response(resp)
-
-
-async def send_images(paths: list[str | Path]) -> list[dict[str, Any]]:
-    """ Send some images to the photo hosting server """
-
-    paths = list(prepare_path(path) for path in paths)
-    params = dict(key=ImHostKeys.API_TOKEN)
-
-    results = []
-
-    async with aiohttp.ClientSession() as session:
-        for path in paths:
-            post_data = aiohttp.FormData()
-
-            with open(path, 'rb') as f:
-                post_data.add_field('image', f)
-
-                async with session.post(API_URL, data=post_data, params=params) as response:
-                    if response.status == 200:
-                        resp = await response.json()
-                    else:
-                        raise HTTPException(text="Can't post image!")
-
-            results.append(parse_response(resp))
-
-    return results

@@ -130,10 +130,9 @@ async def add_new_client(callback: types.CallbackQuery, state: FSMContext):
             state_data = await state.get_data()
 
             face_path_temp = state_data.get('temp_image_path')
-            face_path = shutil.copy2(face_path_temp, MEDIA_DIR)
             face_encoding = state_data.get('face_encoding')
 
-            client = await create_client(face_path, face_encoding)
+            client = await create_client(face_path_temp, face_encoding)
 
             await notify_admins(callback, state, client_id=client.id)
 
