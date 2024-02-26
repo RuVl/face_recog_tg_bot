@@ -109,7 +109,7 @@ async def download_image(msg: types.Message, state: FSMContext, cancellation_tok
         cancellation_token.complete()
         return None, message
 
-    await msg.edit_text(file_downloaded(), reply_markup=success_keyboard, parse_mode=ParseMode.MARKDOWN_V2)
+    await message.edit_text(file_downloaded(), reply_markup=success_keyboard, parse_mode=ParseMode.MARKDOWN_V2)
 
     return document_path, message
 
