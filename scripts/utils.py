@@ -14,7 +14,6 @@ from core.database.methods.client import get_all_clients
 from core.database.models import Location, Visit, Client
 from core.face_recognition.main import compare_faces
 from core.misc import str2int
-from scripts.config import EXIFTOOL_PATH
 from scripts.logger import rootLogger
 
 register_heif_opener()
