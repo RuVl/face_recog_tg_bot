@@ -39,7 +39,7 @@ def add_service_text() -> str:
 
 
 def add_image_text() -> str:
-    return 'Отправляйте мне `фотографии` как документ\.'
+    return 'Отправьте мне `фото` как документ\.'
 
 
 async def face_info_text(

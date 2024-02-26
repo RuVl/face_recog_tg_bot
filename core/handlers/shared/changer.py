@@ -279,18 +279,26 @@ async def add_visit_images(msg: types.Message, state: FSMContext):
     state_data = await state.get_data()
     visit_id = state_data.get('visit_id')
 
+    await message.edit_text('Загрузка изображения на фото хостинг 🔗', reply_markup=cancel_keyboard(), parse_mode=ParseMode.MARKDOWN_V2)
+
     try:
         await create_image_from_path(image_path, visit_id)
         await alert2admins(msg.bot, msg.from_user, state)
     except Exception as e:
         logging.error(str(e))
         await change_msg(
-            msg.reply('Не удалось загрузить на хостинг\! 😟\n\n' + add_image_text(), reply_markup=cancel_keyboard('Назад'), parse_mode=ParseMode.MARKDOWN_V2),
+            msg.reply('Не удалось загрузить на хостинг\! 😟\n\n' + add_image_text(),
+                      reply_markup=cancel_keyboard('Назад'), parse_mode=ParseMode.MARKDOWN_V2),
             state
         )
         return
 
     add_image_token.complete()
+    await state.update_data(add_image_token=add_image_token)
+
+    await message.edit_text('Фотография загружена\!\n'
+                            'Отправьте ещё или нажмите назад\.',
+                            reply_markup=cancel_keyboard('Назад'), parse_mode=ParseMode.MARKDOWN_V2)
 
 
 # /start -> 'check_face' -> face found -> 'add_visit' -> '...' -> 'cancel'

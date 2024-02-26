@@ -15,11 +15,13 @@ from core.database.methods.client import get_all_clients
 from core.database.models import Client
 from core.face_recognition.main import compare_faces
 from core.keyboards.inline import cancel_keyboard
+from core.text import file_downloaded
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 
-async def download_image(msg: types.Message, state: FSMContext, cancellation_token: CancellationToken) -> tuple[Path | None, types.Message]:
+async def download_image(msg: types.Message, state: FSMContext, cancellation_token: CancellationToken,
+                         *, success_keyboard=cancel_keyboard()) -> tuple[Path | None, types.Message]:
     """
         Download the document from msg to TEMP_DIR, check if it is an image and validate its resolution.
         Returns a path to image and editable message.
@@ -106,6 +108,8 @@ async def download_image(msg: types.Message, state: FSMContext, cancellation_tok
         document_path.unlink(missing_ok=True)
         cancellation_token.complete()
         return None, message
+
+    await msg.edit_text(file_downloaded(), reply_markup=success_keyboard, parse_mode=ParseMode.MARKDOWN_V2)
 
     return document_path, message
 

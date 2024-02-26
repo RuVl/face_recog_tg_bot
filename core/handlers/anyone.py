@@ -63,8 +63,6 @@ async def check_if_exist_face(msg: types.Message, state: FSMContext):
         return
 
     await state.update_data(temp_image_path=image_path)
-    await message.edit_text(file_downloaded(),
-                            reply_markup=cancel_keyboard(), parse_mode=ParseMode.MARKDOWN_V2)
 
     clients, encoding = await find_faces(image_path, message, check_face_token)
 

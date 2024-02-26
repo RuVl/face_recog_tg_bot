@@ -51,8 +51,6 @@ async def check_face(msg: types.Message, state: FSMContext):
         return
 
     await state.update_data(temp_image_path=image_path)
-    await message.edit_text(file_downloaded(),
-                            reply_markup=cancel_keyboard(), parse_mode=ParseMode.MARKDOWN_V2)
 
     clients, encoding = await find_faces(image_path, message, check_face_token)
 
@@ -78,8 +76,10 @@ async def check_face(msg: types.Message, state: FSMContext):
     await state.update_data(possible_clients=clients)
     await state.set_state(SharedMenu.CHOOSE_FACE)
 
-    await show_clients_choosing(message, state)
     check_face_token.complete()
+    await state.update_data(check_face_token=check_face_token)
+
+    await show_clients_choosing(message, state)
 
 
 # /start -> 'check_face' -> [...] -> 'cancel'
