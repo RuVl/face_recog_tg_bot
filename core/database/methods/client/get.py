@@ -14,7 +14,7 @@ async def get_all_clients() -> list[Client]:
         return result.all()
 
 
-async def get_client(client_id: int | str, with_profile_image=False) -> Client:
+async def get_client(client_id: int | str, with_profile_image=False) -> Client | None:
     client_id, = str2int(client_id)
 
     async with session_maker() as session:
@@ -25,14 +25,17 @@ async def get_client(client_id: int | str, with_profile_image=False) -> Client:
         return await session.scalar(query)
 
 
-async def get_client_by_phone(phone_number: PhoneNumber | str) -> Client:
+async def get_client_by_phone(phone_number: PhoneNumber | str, with_profile_image=False) -> Client | None:
     if isinstance(phone_number, PhoneNumber):
         phone_number = phone_number.raw_input
 
     async with session_maker() as session:
         query = (select(Client)
-                 .outerjoin(Visit, Client.id == Visit.client_id)
+                 .join(Visit, Client.id == Visit.client_id)
                  .where(Visit.phone_number == phone_number))
+
+        if with_profile_image:
+            query.options(joinedload(Client.profile_picture))
 
         return await session.scalar(query)
 
