@@ -28,7 +28,7 @@ async def update_visit_phone_number(visit_id: int | str, phone_number: PhoneNumb
     visit_id, = str2int(visit_id)
 
     async with session_maker() as session:
-        query = update(Visit).where(Visit.id == visit_id).values(phone_number=phone_number)
+        query = update(Visit).where(Visit.id == visit_id).values(phone_number=phone_number.raw_input)
 
         await session.execute(query)
         await session.commit()

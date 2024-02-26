@@ -29,7 +29,7 @@ async def get_client_by_phone(phone_number: PhoneNumber, with_profile_image=Fals
     async with session_maker() as session:
         query = (select(Client)
                  .join(Visit, Client.id == Visit.client_id)
-                 .where(Visit.phone_number == phone_number))
+                 .where(Visit.phone_number == phone_number.raw_input))
 
         if with_profile_image:
             query.options(joinedload(Client.profile_picture))
