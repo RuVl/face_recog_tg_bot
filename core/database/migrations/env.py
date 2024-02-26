@@ -33,6 +33,20 @@ target_metadata = Base.metadata
 # ... etc.
 
 
+def render_item(type_, obj, autogen_context):
+    """Apply custom rendering for selected items."""
+
+    if type_ == "type" and obj.__class__.__module__.startswith("sqlalchemy_utils."):
+        autogen_context.imports.add(f"import {obj.__class__.__module__}")
+        if hasattr(obj, "choices"):
+            return f"{obj.__class__.__module__}.{obj.__class__.__name__}(choices={obj.choices})"
+        else:
+            return f"{obj.__class__.__module__}.{obj.__class__.__name__}()"
+
+    # default rendering for other objects
+    return False
+
+
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode.
 
@@ -80,6 +94,7 @@ async def run_async_migrations() -> None:
     async with connectable.connect() as connection:
         context.configure(
             connection=connection,
+            render_item=render_item,
             target_metadata=target_metadata,
             compare_type=True
         )

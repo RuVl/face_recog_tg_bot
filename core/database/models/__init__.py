@@ -12,6 +12,7 @@ from .client import Client
 
 
 __all__ = (
+    "Base",
     "Location",
     "Image",
     "Service",
