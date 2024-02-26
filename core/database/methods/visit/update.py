@@ -24,8 +24,11 @@ async def update_visit_social_media(visit_id: int | str, contacts: str) -> None:
         await session.commit()
 
 
-async def update_visit_phone_number(visit_id: int | str, phone_number: PhoneNumber) -> None:
+async def update_visit_phone_number(visit_id: int | str, phone_number: PhoneNumber | str) -> None:
     visit_id, = str2int(visit_id)
+
+    if isinstance(phone_number, PhoneNumber):
+        phone_number = phone_number.raw_input
 
     async with session_maker() as session:
         query = update(Visit).where(Visit.id == visit_id).values(phone_number=phone_number)
