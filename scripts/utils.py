@@ -86,4 +86,9 @@ async def create_visit_with_date(client_id: int | str, location_id: int | str, d
 def get_date_taken(path) -> datetime | None:
     with exiftool.ExifToolHelper() as et:
         tags: list[dict] = et.get_tags(path, tags=["CreateDate"])
-        return datetime.strptime(str(tags[0].get('EXIF:CreateDate')), "%Y:%m:%d %H:%M:%S")
+        date = tags[0].get('EXIF:CreateDate')
+
+        if date is None:
+            return None
+
+        return datetime.strptime(str(date), "%Y:%m:%d %H:%M:%S")
