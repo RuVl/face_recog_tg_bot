@@ -53,7 +53,7 @@ async def add_visit(callback: types.CallbackQuery, state: FSMContext):
             await callback.answer()
 
             text = await face_info_text(client_id, callback.from_user.id)
-            await callback.message.edit_caption(caption=text, reply_markup=add_visit_info_kb())
+            await callback.message.edit_caption(caption=text + '\n\n*Выберите что добавить*', reply_markup=add_visit_info_kb())
         case 'delete_client':
             await state.set_state(SharedMenu.DELETE_CLIENT)
             await callback.answer()
@@ -295,8 +295,11 @@ async def add_visit_images(msg: types.Message, state: FSMContext):
 
 # /start -> 'check_face' -> face found -> 'add_visit' -> '...' -> 'cancel'
 @shared_changer_router.callback_query(F.data == 'cancel', or_f(
-    SharedMenu.ADD_VISIT_NAME, SharedMenu.ADD_VISIT_SOCIAL_MEDIA,
-    SharedMenu.ADD_VISIT_SERVICE, SharedMenu.ADD_VISIT_IMAGES
+    SharedMenu.ADD_VISIT_NAME,
+    SharedMenu.ADD_VISIT_SOCIAL_MEDIA,
+    SharedMenu.ADD_VISIT_PHONE_NUMBER,
+    SharedMenu.ADD_VISIT_SERVICE,
+    SharedMenu.ADD_VISIT_IMAGES
 ))
 async def add_visit_data_back(callback: types.CallbackQuery, state: FSMContext):
     """ Return to adding new visit data """
@@ -310,4 +313,4 @@ async def add_visit_data_back(callback: types.CallbackQuery, state: FSMContext):
     await callback.answer()
 
     caption = await face_info_text(client_id, callback.from_user.id)
-    await show_client(callback.message, state, text=caption, reply_markup=add_visit_info_kb())
+    await callback.message.edit_caption(caption=caption, reply_markup=add_visit_info_kb(), parse_mode=ParseMode.MARKDOWN_V2)
