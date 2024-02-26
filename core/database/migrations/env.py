@@ -94,8 +94,8 @@ async def run_async_migrations() -> None:
     async with connectable.connect() as connection:
         context.configure(
             connection=connection,
-            render_item=render_item,
             target_metadata=target_metadata,
+            render_item=render_item,
             compare_type=True
         )
         await connection.run_sync(do_run_migrations)
