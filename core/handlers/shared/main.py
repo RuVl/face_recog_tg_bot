@@ -30,7 +30,7 @@ admin_moderator_router.callback_query.filter(
 
 
 # /start -> 'check_face'
-@admin_moderator_router.callback_query(F.data.in_(['check_face', 'get_by_id']), or_f(
+@admin_moderator_router.callback_query(F.data.in_(['check_face', 'get_by_id', 'get_by_phone_number']), or_f(
     AdminMenu.START, ModeratorMenu.START
 ))
 async def start_menu(callback: types.CallbackQuery, state: FSMContext):
