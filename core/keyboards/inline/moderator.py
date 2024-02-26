@@ -8,8 +8,13 @@ def moderator_start_menu() -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     builder.row(
         InlineKeyboardButton(text='Проверить в базе', callback_data='check_face')
-    ). row(
+    ).row(
         InlineKeyboardButton(text='Найти по id', callback_data='get_by_id')
+    ).row(
+        InlineKeyboardButton(
+            text='Найти по тел номеру',
+            callback_data='get_by_phone_number'
+        )
     )
 
     return builder.as_markup()

@@ -86,6 +86,7 @@ async def check_face(msg: types.Message, state: FSMContext):
 @shared_recognizer_router.callback_query(F.data == 'cancel', or_f(
     SharedMenu.CHECK_FACE,
     SharedMenu.GET_BY_ID,
+    SharedMenu.GET_BY_PHONE_NUMBER,
     SharedMenu.CHOOSE_FACE,
     SharedMenu.NOT_CHOSEN,
     SharedMenu.SHOW_FACE_INFO
