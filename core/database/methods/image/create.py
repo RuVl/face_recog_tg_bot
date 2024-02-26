@@ -13,11 +13,11 @@ async def create_image_from_path(path: str | Path, visit_id: int | str = None) -
     if isinstance(path, Path):
         path = str(path)
 
-    data = await send_image(path, MEDIA_DIR)
+    data, new_path = await send_image(path, MEDIA_DIR)
     url = data.get('url')
 
     async with session_maker() as session:
-        image = Image(path=path, url=url, hosting_data=data)
+        image = Image(path=new_path, url=url, hosting_data=data)
 
         if visit_id is not None:
             visit_id, = str2int(visit_id)

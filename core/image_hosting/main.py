@@ -11,7 +11,7 @@ from core.image_hosting.utils import prepare_path, parse_response, get_available
 from core.misc.env import ImHostKeys
 
 
-async def send_image(path: str | Path, dir2copy: str | Path, base_name: str = None) -> dict[str, Any]:
+async def send_image(path: str | Path, dir2copy: str | Path, base_name: str = None) -> tuple[dict[str, Any], Path]:
     """ Send an image to the photo hosting server.  """
 
     path = prepare_path(path)
@@ -38,4 +38,4 @@ async def send_image(path: str | Path, dir2copy: str | Path, base_name: str = No
                 else:
                     raise HTTPException(text="Can't post image!")
 
-    return parse_response(resp)
+    return parse_response(resp), new_path
