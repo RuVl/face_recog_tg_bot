@@ -1,3 +1,4 @@
+import phonenumbers
 from phonenumbers import PhoneNumber
 from sqlalchemy import select, exists
 from sqlalchemy.orm import joinedload
@@ -26,10 +27,12 @@ async def get_client(client_id: int | str, with_profile_image=False) -> Client |
 
 
 async def get_client_by_phone(phone_number: PhoneNumber, with_profile_image=False) -> Client | None:
+    phone = phonenumbers.format_number(phone_number, phonenumbers.PhoneNumberFormat.E164)
+
     async with session_maker() as session:
         query = (select(Client)
                  .join(Visit, Client.id == Visit.client_id)
-                 .where(Visit.phone_number == phone_number.raw_input))
+                 .where(Visit.phone_number == phone))
 
         if with_profile_image:
             query.options(joinedload(Client.profile_picture))

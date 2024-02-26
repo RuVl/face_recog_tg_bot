@@ -1,3 +1,4 @@
+import phonenumbers
 from phonenumbers import PhoneNumber
 from sqlalchemy import update
 
@@ -26,9 +27,10 @@ async def update_visit_social_media(visit_id: int | str, social_media: str) -> N
 
 async def update_visit_phone_number(visit_id: int | str, phone_number: PhoneNumber) -> None:
     visit_id, = str2int(visit_id)
+    phone = phonenumbers.format_number(phone_number, phonenumbers.PhoneNumberFormat.E164)
 
     async with session_maker() as session:
-        query = update(Visit).where(Visit.id == visit_id).values(phone_number=phone_number.raw_input)
+        query = update(Visit).where(Visit.id == visit_id).values(phone_number=phone)
 
         await session.execute(query)
         await session.commit()

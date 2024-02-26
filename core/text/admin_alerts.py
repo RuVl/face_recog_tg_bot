@@ -1,3 +1,4 @@
+import phonenumbers
 from aiogram import types
 from phonenumbers import PhoneNumber
 
@@ -21,7 +22,8 @@ def adding_social_media_text(user: types.User, client_id: int, social_media: str
 
 
 def adding_phone_number_text(user: types.User, client_id: int, phone_number: PhoneNumber = None) -> str:
-    return f'`{user.id}` \- `{user.username}` добавил тел\. номер: `{phone_number.raw_input or "нет информации"}` к `{client_id}` записи\!'
+    phone = phonenumbers.format_number(phone_number, phonenumbers.PhoneNumberFormat.E164) or "нет информации"
+    return f'`{user.id}` \- `{user.username}` добавил номер телефона: `{phone}` к `{client_id}` записи\!'
 
 
 def adding_service_text(user: types.User, client_id: int, service: str = None) -> str:
