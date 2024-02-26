@@ -2,6 +2,7 @@ import logging
 
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload
+from tqdm import tqdm
 
 from core.database import session_maker
 from core.database.models import *
@@ -13,7 +14,7 @@ async def fix_exif():
         visits_query = select(Visit).options(joinedload(Visit.client))
         visits = (await session.scalars(visits_query)).all()
 
-        for visit in visits:
+        for visit in tqdm(visits):
             client = visit.client
             image = client.profile_picture
 
