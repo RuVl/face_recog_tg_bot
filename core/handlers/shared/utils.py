@@ -8,8 +8,9 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import FSInputFile, InputMediaPhoto
 
 from core import bot
-from core.database.models import Client
-from core.handlers.utils import change_msg
+from core.database.methods.image import get_client_images
+from core.database.models import Client, Image
+from core.handlers.utils import change_msg, clear_gallery
 from core.keyboards.inline import cancel_keyboard
 from core.keyboards.inline.shared import select_clients_kb
 from core.misc import TgKeys
@@ -21,28 +22,41 @@ from core.text.utils import escape_markdown_v2
 async def show_client(msg: types.Message, state: FSMContext,
                       *,
                       text: str = None,
-                      reply_markup: types.InlineKeyboardMarkup = None):
+                      reply_markup: types.InlineKeyboardMarkup = None,
+                      delete_gallery=True):
     """ Show the client (photo with caption and buttons). Needs client_id and client_photo_path in state data """
 
     state_data = await state.get_data()
 
-    client_id = state_data.get('client_id')
-    face_path = state_data.get('client_photo_path')
+    client_id: int = state_data.get('client_id')
+    client_images: list[Image] = state_data.get('client_images')
+
+    if client_images is None:
+        client_images = await get_client_images(client_id, limit=10)
+        await state.update_data(client_images=client_images)
 
     if text is None:
         text = await face_info_text(client_id, msg.from_user.id)
 
+    if delete_gallery:
+        await clear_gallery(state)
+
     try:
+        media_msg = await msg.answer_media_group([
+            InputMediaPhoto(media=FSInputFile(img.path)) for img in client_images
+        ])
+        await state.update_data(face_gallery_msg=media_msg)
+
         await change_msg(
-            msg.answer_photo(FSInputFile(face_path), caption=text,
-                             reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN_V2),
+            msg.answer(text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN_V2),
             state
         )
     except TelegramBadRequest as e:
         logging.warning(f'Cannot send image {e.message}')
 
+        images_str = [escape_markdown_v2(img.path) for img in client_images]
         await msg.bot.send_message(TgKeys.ADMIN_GROUP_ID,
-                                   f'Произошла ошибка при отправке фотографии `{escape_markdown_v2(face_path)}` клиента `{client_id}`\!\n' +
+                                   f'Произошла ошибка при отправке фотографии `{images_str}` клиента `{client_id}`\!\n' +
                                    escape_markdown_v2('Лимиты телеграмм: https://core.telegram.org/bots/api#sending-files'),
                                    parse_mode=ParseMode.MARKDOWN_V2)
         await change_msg(
@@ -64,13 +78,7 @@ async def show_clients_choosing(msg: types.Message, state: FSMContext,
     state_data = await state.get_data()
 
     if delete_gallery:
-        face_gallery_msg: list[types.Message] = state_data.get('face_gallery_msg')
-        if face_gallery_msg is not None and isinstance(face_gallery_msg, list):  # Delete previous gallery
-            for msg in face_gallery_msg:
-                try:
-                    await msg.delete()
-                except TelegramBadRequest as e:
-                    logging.warning(f'Cannot delete message: {e.message}')
+        await clear_gallery(state)
 
     if page is None:
         page: int = state_data.get('page', 0)

@@ -53,11 +53,11 @@ async def add_visit(callback: types.CallbackQuery, state: FSMContext):
             await callback.answer()
 
             text = await face_info_text(client_id, callback.from_user.id)
-            await callback.message.edit_caption(caption=text + '\n\n*Выберите что добавить:*', reply_markup=add_visit_info_kb())
+            await callback.message.edit_text(text + '\n\n*Выберите что добавить:*', reply_markup=add_visit_info_kb())
         case 'delete_client':
             await state.set_state(SharedMenu.DELETE_CLIENT)
             await callback.answer()
-            await callback.message.edit_caption(caption='Вы уверены?', reply_markup=yes_no_cancel(None))
+            await callback.message.edit_text('Вы уверены?', reply_markup=yes_no_cancel(None))
 
 
 @shared_changer_router.callback_query(F.data != 'cancel', SharedMenu.DELETE_CLIENT)
@@ -88,7 +88,7 @@ async def delete_client_handler(callback: types.CallbackQuery, state: FSMContext
             keyboard = await add_visit_kb(user_id=callback.from_user.id)
             text = await face_info_text(client_id, callback.from_user.id)
 
-            await callback.message.edit_caption(caption=text, reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN_V2)
+            await callback.message.edit_text(text, reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN_V2)
 
 
 # /start -> 'check_face' -> face found -> 'add_visit'
@@ -118,7 +118,7 @@ async def add_visit_info(callback: types.CallbackQuery, state: FSMContext):
 
     await state.set_state(state_)
     await callback.answer()
-    await callback.message.edit_caption(caption=text, reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN_V2)
+    await callback.message.edit_text(text, reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN_V2)
 
 
 async def alert2admins(bot: Bot, user: types.User, state: FSMContext, **kwargs):
@@ -320,5 +320,5 @@ async def add_visit_data_back(callback: types.CallbackQuery, state: FSMContext):
     await state.set_state(SharedMenu.ADD_VISIT)
     await callback.answer()
 
-    caption = await face_info_text(client_id, callback.from_user.id)
-    await callback.message.edit_caption(caption=caption, reply_markup=add_visit_info_kb(), parse_mode=ParseMode.MARKDOWN_V2)
+    text = await face_info_text(client_id, callback.from_user.id)
+    await callback.message.edit_text(text, reply_markup=add_visit_info_kb(), parse_mode=ParseMode.MARKDOWN_V2)

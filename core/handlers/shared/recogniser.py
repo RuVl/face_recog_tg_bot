@@ -139,7 +139,7 @@ async def add_new_client(callback: types.CallbackQuery, state: FSMContext):
 
             await state.set_state(SharedMenu.SHOW_FACE_INFO)
             await callback.answer('Клиент добавлен в базу данных!')
-            await state.update_data(client_id=client.id, client_photo_path=face_path)
+            await state.update_data(client_id=client.id)
 
             keyboard = await add_visit_kb(user_id=callback.from_user.id)
             await show_client(callback.message, state, reply_markup=keyboard)
@@ -157,7 +157,7 @@ async def choose_face(callback: types.CallbackQuery, state: FSMContext):
                                              reply_markup=yes_no_cancel(), parse_mode=ParseMode.MARKDOWN_V2)
         case client_id:
             try:
-                client = await get_client(client_id, True)
+                client = await get_client(client_id)
             except ValueError:
                 await callback.answer('Не валидный ответ!')
                 return
@@ -167,7 +167,7 @@ async def choose_face(callback: types.CallbackQuery, state: FSMContext):
                 return
 
             await state.set_state(SharedMenu.SHOW_FACE_INFO)
-            await state.update_data(client_id=client.id, client_photo_path=client.profile_picture.path)
+            await state.update_data(client_id=client.id)
 
             await clear_state_data(state)
 

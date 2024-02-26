@@ -15,7 +15,7 @@ async def get_image_by_id(id_: int | str) -> Image:
         return await session.scalar(query)
 
 
-async def get_client_images(client_id: int | str) -> list[Image]:
+async def get_client_images(client_id: int | str, limit: int = None) -> list[Image]:
     """ Возвращает все изображения клиента """
 
     client_id, = str2int(client_id)
@@ -25,6 +25,9 @@ async def get_client_images(client_id: int | str) -> list[Image]:
                  .outerjoin(Visit, Image.visit_id == Visit.id)
                  .outerjoin(Client, Image.id == Client.profile_picture_id)
                  .where((Visit.client_id == client_id) | (Client.id == client_id)))
+
+        if limit is not None:
+            query.limit(limit)
 
         result = await session.scalars(query)
         return result.all()

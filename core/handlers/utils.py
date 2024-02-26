@@ -235,7 +235,7 @@ async def change_msg(awaitable_msg: methods.TelegramMethod[types.Message], state
             logging.warning(f'Exception during delete last_msg: {e.message}')
 
     if clear_state:
-        await state.clear()
+        await clear_state_data(state, clear_state=True)
 
     msg = await awaitable_msg
     await state.update_data(last_msg=msg)
