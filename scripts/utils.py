@@ -1,8 +1,9 @@
 from datetime import datetime
 from pathlib import Path
 
+import exiftool
 import numpy as np
-from PIL import Image, ImageFile
+from PIL import ImageFile
 from deepface import DeepFace
 from pillow_heif import register_heif_opener
 from sqlalchemy import select
@@ -83,14 +84,6 @@ async def create_visit_with_date(client_id: int | str, location_id: int | str, d
 
 
 def get_date_taken(path) -> datetime | None:
-    im = Image.open(path)
-    exif = im.getexif()
-
-    if not exif:
-        return None
-
-    date_str = exif.get(36867)
-    if date_str is None:
-        return None
-
-    return datetime.strptime(date_str, '%Y:%m:%d %H:%M:%S')
+    with exiftool.ExifToolHelper() as et:
+        tags: list[dict] = et.get_tags(path, tags=["CreateDate"])
+        return datetime.strptime(str(tags[0].get('EXIF:CreateDate')), "%Y:%m:%d %H:%M:%S")
