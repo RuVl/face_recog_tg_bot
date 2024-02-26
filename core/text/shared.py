@@ -1,3 +1,5 @@
+import phonenumbers
+
 from core.database.methods.image import get_client_images
 from core.database.methods.service import get_client_services
 from core.database.methods.user import check_if_admin
@@ -87,15 +89,15 @@ async def face_info_text(
                    f'{social_media_str}\n\n')
 
     # All phone numbers from visits
-    # phone_number_str = '\n'.join(set(
-    #     f'`{format_phone_number(visit.phone_number)}`'
-    #     for visit in visits
-    #     if visit.phone_number is not None
-    # ))
-    #
-    # if phone_number_str != '':
-    #     result += ('*Номера телефонов:*\n'
-    #                f'{phone_number_str}\n\n')
+    phone_number_str = '\n'.join(set(
+        f'`{phonenumbers.format_number(visit.phone_number, phonenumbers.PhoneNumberFormat.E164)}`'
+        for visit in visits
+        if visit.phone_number is not None
+    ))
+
+    if phone_number_str != '':
+        result += ('*Номера телефонов:*\n'
+                   f'{phone_number_str}\n\n')
 
     # Check if each visit has location
     for i in range(len(visits)):
