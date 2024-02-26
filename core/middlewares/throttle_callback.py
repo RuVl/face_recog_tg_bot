@@ -37,11 +37,11 @@ class ThrottlingMiddleware(BaseMiddleware):
         now_ = datetime.now()
         antiflood_data: dict = await self.storage.get_data(key=key) or {}
 
-        antiflood_data.setdefault('response_received', False)
-        antiflood_data.setdefault('callback_time', now_)
+        response_received = antiflood_data.setdefault('response_received', True)
+        callback_time = antiflood_data.setdefault('callback_time', now_)
 
         # Cancel handler
-        if not antiflood_data.get('response_received') and now_ - antiflood_data['callback_time'] < self.timeout:
+        if not response_received and now_ - callback_time < self.timeout:
             await event.answer()
             raise CancelHandler()
 
