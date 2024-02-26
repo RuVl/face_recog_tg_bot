@@ -14,10 +14,11 @@ from core.misc.env import ImHostKeys
 async def send_image(path: str | Path, dir2copy: str | Path, base_name: str = None) -> dict[str, Any]:
     """ Send an image to the photo hosting server.  """
 
+    path = prepare_path(path)
+
     if base_name is None:
         base_name = path.stem[-5:]
 
-    path = prepare_path(path)
     new_path = get_available_filepath(dir2copy, base_name, path.suffix)
 
     shutil.copy2(path, new_path)
