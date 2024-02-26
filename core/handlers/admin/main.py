@@ -5,6 +5,7 @@ from aiogram.fsm.context import FSMContext
 
 from core.filters import IsAdminMessageFilter, IsAdminCallbackFilter
 from core.handlers.admin.menu import admin_menu_router
+from core.handlers.shared import SHARED_CALLBACK_COMMANDS
 from core.handlers.shared.recogniser import shared_recognizer_router
 from core.handlers.utils import change_msg
 from core.keyboards.inline import admin_start_menu, admin_menu
@@ -36,7 +37,7 @@ async def start(msg: types.Message, state: FSMContext):
     await state.set_state(AdminMenu.START)
 
 
-@admin_router.callback_query(F.data.not_in(['check_face', 'get_by_id']), AdminMenu.START)
+@admin_router.callback_query(F.data.not_in(SHARED_CALLBACK_COMMANDS), AdminMenu.START)
 async def start_menu(callback: types.CallbackQuery, state: FSMContext):
     """ Select in start menu """
 
