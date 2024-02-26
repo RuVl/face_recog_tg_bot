@@ -53,7 +53,7 @@ async def add_visit(callback: types.CallbackQuery, state: FSMContext):
             await callback.answer()
 
             text = await face_info_text(client_id, callback.from_user.id)
-            await callback.message.edit_caption(caption=text + '\n\n*Выберите что добавить*', reply_markup=add_visit_info_kb())
+            await callback.message.edit_caption(caption=text + '\n\n*Выберите что добавить:*', reply_markup=add_visit_info_kb())
         case 'delete_client':
             await state.set_state(SharedMenu.DELETE_CLIENT)
             await callback.answer()

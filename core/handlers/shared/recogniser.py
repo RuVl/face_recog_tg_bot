@@ -14,7 +14,7 @@ from core.handlers.shared import show_client, show_clients_choosing, notify_admi
 from core.handlers.utils import download_image, find_faces, clear_state_data, change_msg
 from core.keyboards.inline import cancel_keyboard, yes_no_cancel, add_visit_kb, admin_start_menu, moderator_start_menu, anyone_start_menu
 from core.state_machines import SharedMenu, AdminMenu, ModeratorMenu, AnyoneMenu
-from core.text import cancel_previous_processing, file_downloaded
+from core.text import cancel_previous_processing, file_downloaded, face_info_text
 from core.text.admin import hi_admin_text
 from core.text.moderator import hi_moderator_text
 
@@ -172,7 +172,8 @@ async def choose_face(callback: types.CallbackQuery, state: FSMContext):
             await clear_state_data(state)
 
             keyboard = await add_visit_kb(user_id=callback.from_user.id)
-            await show_client(callback.message, state, reply_markup=keyboard)
+            text = await face_info_text(client_id, callback.from_user.id)
+            await show_client(callback.message, state, text=text, reply_markup=keyboard)
 
     await callback.answer()
 

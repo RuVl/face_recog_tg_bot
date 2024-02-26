@@ -9,7 +9,7 @@ from . import Base, Location, Image, Service
 
 from typing import TYPE_CHECKING
 
-from ...config import PHONE_NUMBER_REGION
+from core.config import PHONE_NUMBER_REGION
 
 if TYPE_CHECKING:
     from . import Client
