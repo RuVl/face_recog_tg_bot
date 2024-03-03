@@ -10,6 +10,10 @@ SUPPORTED_IMAGE_TYPES = {
     'image/heif': '.heic'
 }
 
+SUPPORTED_VIDEO_TYPES = {
+    'video/mp4': '.mp4'
+}
+
 MODEL = 'Facenet512'
 BACKEND = 'retinaface'
 DISTANCE_METRIC = 'cosine'

@@ -10,7 +10,7 @@ from aiogram.fsm.context import FSMContext
 from core.cancel_token import CancellationToken
 from deepface import DeepFace
 
-from core.config import SUPPORTED_IMAGE_TYPES, TEMP_DIR, MODEL, BACKEND
+from core.config import SUPPORTED_IMAGE_TYPES, TEMP_DIR, MODEL, BACKEND, SUPPORTED_VIDEO_TYPES
 from core.database.methods.client import get_all_clients
 from core.database.models import Client
 from core.face_recognition.main import compare_faces
@@ -20,8 +20,54 @@ from core.text import file_downloaded
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 
+async def download_document(msg: types.Message, state: FSMContext,
+                            supported_types: dict[str, str], cancellation_token: CancellationToken) -> tuple[Path | None, types.Message]:
+    """ Download the document from the msg. Cancellation token for stop downloading. Editable message for alarm if it can't be downloaded """
+
+    # Unsupported file type
+    if msg.document.mime_type not in supported_types.keys():
+        message = await change_msg(
+            msg.reply('Файл неподдерживаемого формата\! 😩',
+                      reply_markup=cancel_keyboard('Назад'), parse_mode=ParseMode.MARKDOWN_V2),
+            state
+        )
+        cancellation_token.complete()
+        return None, message
+
+    message = await change_msg(
+        msg.answer('Скачивание файла\. 📄', reply_markup=cancel_keyboard(), parse_mode=ParseMode.MARKDOWN_V2),
+        state
+    )
+
+    TEMP_DIR.mkdir(exist_ok=True)  # Create temporary directory
+
+    filename = msg.document.file_unique_id + supported_types[msg.document.mime_type]
+    document_path = TEMP_DIR / filename
+
+    if cancellation_token.cancelled:
+        return None, message
+
+    # Download image
+    await msg.bot.download(msg.document, document_path)
+
+    # Check if the file is downloaded
+    if not document_path.exists():
+        message = await message.edit_text('Загрузка файла не удалась\. 😭\n'
+                                          'Попробуйте ещё раз или обратитесь к админам\.',
+                                          reply_markup=cancel_keyboard('Назад'), parse_mode=ParseMode.MARKDOWN_V2)
+        cancellation_token.complete()
+        return None, message
+
+        # Check if the task canceled
+    if cancellation_token.cancelled:
+        document_path.unlink(missing_ok=True)
+        return None, message
+
+    return document_path, message
+
+
 async def download_image(msg: types.Message, state: FSMContext, cancellation_token: CancellationToken,
-                         *, success_keyboard=cancel_keyboard()) -> tuple[Path | None, types.Message]:
+                         *, additional_text=None, success_keyboard=cancel_keyboard()) -> tuple[Path | None, types.Message]:
     """
         Download the document from msg to TEMP_DIR, check if it is an image and validate its resolution.
         Returns a path to image and editable message.
@@ -37,44 +83,7 @@ async def download_image(msg: types.Message, state: FSMContext, cancellation_tok
         cancellation_token.complete()
         return None, message
 
-    # Unsupported file type
-    if msg.document.mime_type not in SUPPORTED_IMAGE_TYPES.keys():
-        message = await change_msg(
-            msg.reply('Файл неподдерживаемого формата\! 😩', reply_markup=cancel_keyboard('Назад'), parse_mode=ParseMode.MARKDOWN_V2),
-            state
-        )
-        cancellation_token.complete()
-        return None, message
-
-    message = await change_msg(
-        msg.answer('Скачивание файла\. 📄', reply_markup=cancel_keyboard(), parse_mode=ParseMode.MARKDOWN_V2),
-        state
-    )
-
-    # Create temporary directory
-    TEMP_DIR.mkdir(exist_ok=True)
-
-    filename = msg.document.file_id + SUPPORTED_IMAGE_TYPES[msg.document.mime_type]
-    document_path = TEMP_DIR / filename
-
-    if cancellation_token.cancelled:
-        return None, message
-
-    # Download image
-    await msg.bot.download(msg.document, document_path)
-
-    # Check if the file is downloaded
-    if not document_path.exists():
-        await message.edit_text('Загрузка файла не удалась\. 😭\n'
-                                'Попробуйте ещё раз или обратитесь к админам\.',
-                                reply_markup=cancel_keyboard('Назад'), parse_mode=ParseMode.MARKDOWN_V2)
-        cancellation_token.complete()
-        return None, message
-
-    # Check if the task canceled
-    if cancellation_token.cancelled:
-        document_path.unlink(missing_ok=True)
-        return None, message
+    document_path, message = await download_document(msg, state, SUPPORTED_IMAGE_TYPES, cancellation_token)
 
     # Check image resolution
     try:
@@ -109,7 +118,39 @@ async def download_image(msg: types.Message, state: FSMContext, cancellation_tok
         cancellation_token.complete()
         return None, message
 
-    await message.edit_text(file_downloaded(), reply_markup=success_keyboard, parse_mode=ParseMode.MARKDOWN_V2)
+    text = file_downloaded()
+    if additional_text is not None:
+        text += f'\n{additional_text}'
+
+    await message.edit_text(text, reply_markup=success_keyboard, parse_mode=ParseMode.MARKDOWN_V2)
+
+    return document_path, message
+
+
+async def download_video(msg: types.Message, state: FSMContext, cancellation_token: CancellationToken,
+                         *, additional_text=None, success_keyboard=cancel_keyboard()) -> tuple[Path | None, types.Message]:
+    """
+        Download the document from msg to TEMP_DIR, check if it is an image and validate its resolution.
+        Returns a path to image and editable message.
+        If the task is canceled or errors have occurred, it returns None.
+    """
+
+    # File is too big
+    if msg.document.file_size > 20 * 1024 * 1024:
+        message = await change_msg(
+            msg.reply('Файл слишком большой\! \(Не более 20мб\) 😖', reply_markup=cancel_keyboard('Назад'), parse_mode=ParseMode.MARKDOWN_V2),
+            state
+        )
+        cancellation_token.complete()
+        return None, message
+
+    document_path, message = await download_document(msg, state, SUPPORTED_VIDEO_TYPES, cancellation_token)
+
+    text = file_downloaded()
+    if additional_text is not None:
+        text += f'\n{additional_text}'
+
+    await message.edit_text(text, reply_markup=success_keyboard, parse_mode=ParseMode.MARKDOWN_V2)
 
     return document_path, message
 
@@ -184,6 +225,10 @@ async def clear_cancellation_tokens(state: FSMContext):
     add_image_token: CancellationToken = state_data.get('add_image_token')
     if add_image_token is not None and not add_image_token.completed:
         add_image_token.cancel()
+
+    add_video_token: CancellationToken = state_data.get('add_video_token')
+    if add_video_token is not None and not add_video_token.completed:
+        add_video_token.cancel()
 
 
 async def clear_gallery(state: FSMContext):

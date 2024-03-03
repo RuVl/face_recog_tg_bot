@@ -12,18 +12,19 @@ from core.database.methods.client import client_have_visit, delete_client
 from core.database.methods.image import create_image_from_path
 from core.database.methods.service import create_visit_service
 from core.database.methods.user import get_tg_user_location, check_if_admin
+from core.database.methods.video import create_video_from_path
 from core.database.methods.visit import create_visit, update_visit_name, update_visit_social_media
 from core.database.methods.visit.update import update_visit_phone_number
 from core.handlers.shared import show_client
 from core.handlers.shared.recogniser import return2start_menu
-from core.handlers.utils import change_msg, download_image, clear_cancellation_tokens
+from core.handlers.utils import change_msg, download_image, clear_cancellation_tokens, download_video
 from core.keyboards.inline import add_visit_info_kb, cancel_keyboard, add_visit_kb, yes_no_cancel
 from core.misc import TgKeys
 from core.state_machines import SharedMenu
 from core.text import exit_visit_text, adding_name_text, adding_social_media_text, adding_service_text, adding_photo_text, face_info_text, \
-    created_visit_text, add_image_text, add_service_text, add_social_media_text, add_name_text, cancel_previous_processing
-from core.text.admin_alerts import adding_phone_number_text
-from core.text.shared import add_phone_number_text
+    created_visit_text, add_image_text, add_service_text, add_social_media_text, add_name_text, cancel_previous_processing, add_phone_number_text, \
+    add_video_text
+from core.text.admin_alerts import adding_phone_number_text, adding_video_text
 
 shared_changer_router = Router()
 
@@ -115,6 +116,12 @@ async def add_visit_info(callback: types.CallbackQuery, state: FSMContext):
             state_ = SharedMenu.ADD_VISIT_IMAGES
             text = add_image_text()
             keyboard = cancel_keyboard('Назад')
+        case 'add_videos':
+            state_ = SharedMenu.ADD_VISIT_VIDEOS
+            text = add_video_text()
+            keyboard = cancel_keyboard('Назад')
+        case _:
+            raise NotImplementedError('Не реализовано!')
 
     await state.set_state(state_)
     await callback.answer()
@@ -145,6 +152,8 @@ async def alert2admins(bot: Bot, user: types.User, state: FSMContext, **kwargs):
             text = adding_service_text(user, client_id, **kwargs)
         case SharedMenu.ADD_VISIT_IMAGES:
             text = adding_photo_text(user, client_id)
+        case SharedMenu.ADD_VISIT_IMAGES:
+            text = adding_video_text(user, client_id)
 
     await bot.send_message(TgKeys.ADMIN_GROUP_ID, text, parse_mode=ParseMode.MARKDOWN_V2)
 
@@ -272,14 +281,12 @@ async def add_visit_images(msg: types.Message, state: FSMContext):
     add_image_token = CancellationToken()
     await state.update_data(add_image_token=add_image_token)  # set token to not None
 
-    image_path, message = await download_image(msg, state, add_image_token)
+    image_path, message = await download_image(msg, state, add_image_token, additional_text='Загрузка изображения на фото хостинг 🔗')
     if add_image_token.completed or image_path is None:
         return
 
     state_data = await state.get_data()
     visit_id = state_data.get('visit_id')
-
-    await message.edit_text('Загрузка изображения на фото хостинг 🔗', reply_markup=cancel_keyboard(), parse_mode=ParseMode.MARKDOWN_V2)
 
     try:
         await create_image_from_path(image_path, visit_id)
@@ -301,13 +308,63 @@ async def add_visit_images(msg: types.Message, state: FSMContext):
                             reply_markup=cancel_keyboard('Назад'), parse_mode=ParseMode.MARKDOWN_V2)
 
 
+# /start -> 'check_face' -> face found -> 'add_visit' -> 'add_videos'
+@shared_changer_router.message(SharedMenu.ADD_VISIT_VIDEOS, F.content_type == ContentType.DOCUMENT)
+async def add_visit_videos(msg: types.Message, state: FSMContext):
+    """ Add visit videos """
+
+    state_data = await state.get_data()
+    add_video_token: CancellationToken = state_data.get('add_video_token')
+
+    # Add image is still processing
+    if add_video_token is not None:
+        if not add_video_token.completed:
+            await change_msg(
+                msg.answer(cancel_previous_processing(), reply_markup=cancel_keyboard('Отменить'), parse_mode=ParseMode.MARKDOWN_V2),
+                state
+            )
+            return
+        else:
+            await clear_cancellation_tokens(state)
+
+    add_video_token = CancellationToken()
+    await state.update_data(add_video_token=add_video_token)  # set token to not None
+
+    video_path, message = await download_video(msg, state, add_video_token, additional_text='Загрузка видео в облако 🔗')
+    if add_video_token.completed or video_path is None:
+        return
+
+    state_data = await state.get_data()
+    visit_id = state_data.get('visit_id')
+
+    try:
+        await create_video_from_path(video_path, visit_id)
+        await alert2admins(msg.bot, msg.from_user, state)
+    except Exception as e:
+        logging.error(str(e))
+        await change_msg(
+            msg.reply('Не удалось загрузить в облако\! 😟\n\n' + add_image_text(),
+                      reply_markup=cancel_keyboard('Назад'), parse_mode=ParseMode.MARKDOWN_V2),
+            state
+        )
+        return
+
+    add_video_token.complete()
+    await state.update_data(add_video_token=add_video_token)
+
+    await message.edit_text('Видео загружено\!\n'
+                            'Отправьте ещё или нажмите назад\.',
+                            reply_markup=cancel_keyboard('Назад'), parse_mode=ParseMode.MARKDOWN_V2)
+
+
 # /start -> 'check_face' -> face found -> 'add_visit' -> '...' -> 'cancel'
 @shared_changer_router.callback_query(F.data == 'cancel', or_f(
     SharedMenu.ADD_VISIT_NAME,
     SharedMenu.ADD_VISIT_SOCIAL_MEDIA,
     SharedMenu.ADD_VISIT_PHONE_NUMBER,
     SharedMenu.ADD_VISIT_SERVICE,
-    SharedMenu.ADD_VISIT_IMAGES
+    SharedMenu.ADD_VISIT_IMAGES,
+    SharedMenu.ADD_VISIT_VIDEOS
 ))
 async def add_visit_data_back(callback: types.CallbackQuery, state: FSMContext):
     """ Return to adding new visit data """

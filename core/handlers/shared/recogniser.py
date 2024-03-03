@@ -2,6 +2,7 @@ from aiogram import F, types, Router
 from aiogram.enums import ContentType, ParseMode
 from aiogram.filters import or_f
 from aiogram.fsm.context import FSMContext
+from aiogram.types import InputFile
 
 from core.callback_factory import PaginatorFactory
 from core.cancel_token import CancellationToken
@@ -10,6 +11,7 @@ from core.database.methods.user import check_if_admin, check_if_moderator
 from core.handlers.shared import show_client, show_clients_choosing, notify_admins
 from core.handlers.utils import download_image, find_faces, clear_state_data, change_msg
 from core.keyboards.inline import cancel_keyboard, yes_no_cancel, add_visit_kb, admin_start_menu, moderator_start_menu, anyone_start_menu
+from core.misc import TgKeys
 from core.state_machines import SharedMenu, AdminMenu, ModeratorMenu, AnyoneMenu
 from core.text import cancel_previous_processing, face_info_text
 from core.text.admin import hi_admin_text
@@ -23,7 +25,22 @@ shared_recognizer_router = Router()
 async def check_face(msg: types.Message, state: FSMContext):
     """ Validate and download the provided file. Find a face on it and compare with others. """
 
-    # noinspection DuplicatedCode
+    is_moderator = await check_if_moderator(msg.from_user.id)
+
+    async def notify_admins(text: str) -> types.Message | None:
+        if not is_moderator:
+            return
+
+        try:
+            msg2admins = await msg.forward(TgKeys.ADMIN_GROUP_ID)
+        except:
+            return await msg.bot.send_document(chat_id=TgKeys.ADMIN_GROUP_ID,
+                                               document=InputFile(image_path),
+                                               caption=text,
+                                               parse_mode=ParseMode.MARKDOWN_V2)
+
+        return await msg2admins.reply(text, parse_mode=ParseMode.MARKDOWN_V2)
+
     state_data = await state.get_data()
     check_face_token: CancellationToken = state_data.get('check_face_token')
 
@@ -43,7 +60,7 @@ async def check_face(msg: types.Message, state: FSMContext):
     await state.update_data(check_face_token=check_face_token)  # set token to not None
 
     # Download image from the message
-    image_path, message = await download_image(msg, state, check_face_token)
+    image_path, message = await download_image(msg, state, check_face_token, additional_text='Поиск лица на фотографии\. 🔎')
     if check_face_token.completed or image_path is None:
         return
 
@@ -55,6 +72,9 @@ async def check_face(msg: types.Message, state: FSMContext):
         return
 
     if encoding is None:
+        await notify_admins(f'Модератор @{msg.from_user.username} \({msg.from_user.id}\) отправил фото для поиска в бд\.\n'
+                            f'Распознавание лиц не удалось\!')
+
         await message.edit_text('Распознавание лиц не удалось, повторите попытку\.',
                                 reply_markup=cancel_keyboard('Назад'), parse_mode=ParseMode.MARKDOWN_V2)
         return
@@ -62,6 +82,10 @@ async def check_face(msg: types.Message, state: FSMContext):
     await state.update_data(face_encoding=encoding)
 
     if clients is None:
+        await notify_admins(f'Модератор @{msg.from_user.username} \({msg.from_user.id}\) отправил фото для поиска в бд\.\n'
+                            f'Такого лица нет в базе данных\!\n'
+                            f'Модератору предложено добавить нового человека\.')
+
         await state.set_state(SharedMenu.NOT_FOUND)
         await message.edit_text('Нет в базе\! 🤯\n'
                                 'Добавить такого человека?',
@@ -76,6 +100,9 @@ async def check_face(msg: types.Message, state: FSMContext):
     check_face_token.complete()
     await state.update_data(check_face_token=check_face_token)
 
+    await notify_admins(f'Модератор @{msg.from_user.username} \({msg.from_user.id}\) отправил фото для поиска в бд\.\n'
+                        f'В базе данных найдено {len(clients)} похожих лиц\!\n'
+                        f'Модератору предложен выбор\.')
     await show_clients_choosing(message, state)
 
 
@@ -126,6 +153,12 @@ async def add_new_client(callback: types.CallbackQuery, state: FSMContext):
         case 'yes':
             state_data = await state.get_data()
 
+            if state_data.get('creating_client', False):
+                await callback.answer('Подождите, клиент создается.')
+                return
+
+            await state.update_data(creating_client=True)
+
             face_path_temp = state_data.get('temp_image_path')
             face_encoding = state_data.get('face_encoding')
 
@@ -139,6 +172,8 @@ async def add_new_client(callback: types.CallbackQuery, state: FSMContext):
 
             keyboard = await add_visit_kb(user_id=callback.from_user.id)
             await show_client(callback.message, state, reply_markup=keyboard)
+
+            await state.update_data(creating_client=False)
 
 
 # /start -> 'check_face' -> document provided -> found some faces

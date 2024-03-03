@@ -11,8 +11,8 @@ if TYPE_CHECKING:
 
 class Image(Base):
     """
-        Таблица изображений с фото хостинга. (Связывается с Client по Client.id)
-        :param path: Путь к изображению локально
+        Таблица изображений, загруженных на фото хостинг.
+        :param path: Локальный путь к изображению
         :param url: Ссылка на изображение на фото хостинге
         :param hosting_data: Информация об изображении при загрузке на фото хостинг
         :param visit_id: Foreign key to Visit. Its null when image is client.profile_picture
@@ -22,10 +22,10 @@ class Image(Base):
 
     id: Mapped[int] = Column(Integer, primary_key=True)
 
-    path: Mapped[str] = Column(String(255), nullable=True)
+    path: Mapped[str] = Column(String(255), nullable=False)
 
     url: Mapped[str] = Column(String(255), nullable=True)
     hosting_data: Mapped[dict] = Column(JSON, nullable=True)
 
-    visit_id: Mapped[int] = Column(ForeignKey('visits.id'), nullable=True)
-    visit: Mapped[Optional['Visit']] = relationship('Visit', back_populates='images')
+    visit_id: Mapped[int] = Column(ForeignKey('visits.id', ondelete='SET NULL'), nullable=True)
+    visit: Mapped[Optional['Visit']] = relationship('Visit', back_populates='images', passive_deletes=True)

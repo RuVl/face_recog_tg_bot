@@ -28,3 +28,7 @@ class RedisKeys:
 
 class ImHostKeys:
     API_TOKEN: Final[str] = environ.get('IM_HOST_TOKEN')
+
+
+class CloudStorageKeys:
+    API_TOKEN: Final[str] = environ.get('CLOUD_STORAGE_TOKEN')

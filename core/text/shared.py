@@ -3,8 +3,9 @@ import phonenumbers
 from core.database.methods.image import get_client_images
 from core.database.methods.service import get_client_services
 from core.database.methods.user import check_if_admin
+from core.database.methods.video import get_client_videos
 from core.database.methods.visit import get_visit_with_location, get_client_visits_with_location
-from core.database.models import Visit, Service, Image
+from core.database.models import Visit, Service, Image, Video
 from core.text.utils import escape_markdown_v2
 
 
@@ -18,8 +19,7 @@ def cancel_previous_processing() -> str:
 
 
 def file_downloaded() -> str:
-    return ('✅ Файл скачан\.\n'
-            'Поиск лица на фотографии\. 🔎')
+    return '✅ Файл скачан\.'
 
 
 def add_name_text() -> str:
@@ -39,7 +39,12 @@ def add_service_text() -> str:
 
 
 def add_image_text() -> str:
-    return 'Отправьте мне `фото` как документ\.'
+    return ('Отправьте мне `фото` как документ\.\n'
+            'Поддерживаемые форматы: `jpg` и `heic`')
+
+
+def add_video_text() -> str:
+    return 'Отправьте мне `видео` как документ\.'
 
 
 async def face_info_text(
@@ -47,6 +52,7 @@ async def face_info_text(
         user_id: int | str = None,
         *,
         images: list[Image] = None,
+        videos: list[Video] = None,
         visits: list[Visit] = None,
         services: list[Service] = None
 ) -> str:
@@ -54,8 +60,11 @@ async def face_info_text(
 
     is_admin = await check_if_admin(user_id) if user_id is not None else False
 
-    if images is None:
+    if is_admin and images is None:
         images = await get_client_images(client_id)
+
+    if videos is None:
+        videos = await get_client_videos(client_id)
 
     if visits is None:
         visits = await get_client_visits_with_location(client_id)
@@ -75,6 +84,16 @@ async def face_info_text(
         if images_str != '' and images_str != '``':
             result += ('*Ссылки на фотографии:*\n'
                        f'{images_str}\n\n')
+
+    videos_str = '\n'.join(
+        f'`{video.url}`'
+        for video in videos
+        if video.url is not None
+    ).strip()
+
+    if videos_str != '' and videos_str != '``':
+        result += ('*Ссылки на видео:*\n'
+                   f'{videos_str}\n\n')
 
     # All contacts from visits
     social_media_str = '\n'.join(set(

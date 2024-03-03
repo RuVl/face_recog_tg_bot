@@ -37,7 +37,8 @@ def add_visit_info_kb() -> InlineKeyboardMarkup:
     ).row(
         InlineKeyboardButton(text='Сервис', callback_data='add_service')
     ).row(
-        InlineKeyboardButton(text='Фотографии', callback_data='add_images')
+        InlineKeyboardButton(text='Фотографии', callback_data='add_images'),
+        InlineKeyboardButton(text='Видео', callback_data='add_videos')
     ).row(
         InlineKeyboardButton(text='Назад', callback_data='cancel')
     )

@@ -28,4 +28,6 @@ class SharedMenu(StatesGroup):
     ADD_VISIT_PHONE_NUMBER = State()  # 'add_visit' -> 'add_phone_number'
 
     ADD_VISIT_SERVICE = State()  # 'add_visit' -> 'add_service'
+
     ADD_VISIT_IMAGES = State()  # 'add_visit' -> 'add_images'
+    ADD_VISIT_VIDEOS = State()  # 'add_visit' -> 'add_videos'

@@ -18,8 +18,8 @@ class Client(Base):
     id: Mapped[int] = Column(Integer, primary_key=True)
 
     profile_picture_id: Mapped[int] = Column(ForeignKey('images.id'), nullable=False)
-    profile_picture: Mapped['Image'] = relationship('Image', lazy='joined')
+    profile_picture: Mapped['Image'] = relationship('Image', lazy='joined', passive_deletes=True)
 
     face_encoding: Mapped[np.ndarray] = Column(JSON, nullable=False)
 
-    visits: Mapped[list['Visit']] = relationship('Visit', back_populates='client')
+    visits: Mapped[list['Visit']] = relationship('Visit', back_populates='client', passive_deletes=True, cascade='all, delete')

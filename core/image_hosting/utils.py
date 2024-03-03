@@ -16,19 +16,3 @@ def prepare_path(path: str | Path) -> Path:
 
 def parse_response(response: dict) -> dict[str, Any]:
     return response.get('data')
-
-
-def get_available_filepath(directory: Path | str, base_name: str, extension: str):
-    extension = extension.removeprefix('.')
-    directory = Path(directory)
-
-    filename = f'{base_name}.{extension}'
-    if not (directory / filename).exists():
-        return directory / filename
-
-    index = 0
-    while True:
-        filename = f"{base_name}{index}.{extension}"
-        if not (directory / filename).exists():
-            return directory / filename
-        index += 1

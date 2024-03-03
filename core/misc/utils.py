@@ -1,12 +1,13 @@
 import json
 from datetime import timedelta
+from pathlib import Path
 
 from aiogram.fsm.storage.base import BaseStorage
 from aiogram.fsm.storage.redis import RedisStorage, DefaultKeyBuilder
 from redis.asyncio import Redis
 
 from core.json_classes import TGEncoder, TGDecoder
-from core.misc.env import RedisKeys
+from core.misc import RedisKeys
 
 
 def get_storage(*,
@@ -30,3 +31,19 @@ def get_storage(*,
         json_dumps=lambda data: json.dumps(data, cls=TGEncoder),
         json_loads=lambda data: json.loads(data, cls=TGDecoder)
     )
+
+
+def get_available_filepath(directory: Path | str, base_name: str, extension: str):
+    extension = extension.removeprefix('.')
+    directory = Path(directory)
+
+    filename = f'{base_name}.{extension}'
+    if not (directory / filename).exists():
+        return directory / filename
+
+    index = 0
+    while True:
+        filename = f"{base_name}{index}.{extension}"
+        if not (directory / filename).exists():
+            return directory / filename
+        index += 1

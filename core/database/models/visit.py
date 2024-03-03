@@ -5,7 +5,7 @@ from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
 from sqlalchemy.orm import Mapped, relationship
 from sqlalchemy_utils import PhoneNumberType
 
-from . import Base, Location, Image, Service
+from . import Base, Location, Image, Video, Service
 
 from typing import TYPE_CHECKING
 
@@ -29,11 +29,13 @@ class Visit(Base):
     social_media: Mapped[str] = Column(String(255), nullable=True)
     phone_number: Mapped[PhoneNumber] = Column(PhoneNumberType(region=PHONE_NUMBER_REGION), nullable=True, index=True)
 
-    images: Mapped[list['Image']] = relationship('Image', back_populates='visit')
-    services: Mapped[list['Service']] = relationship('Service', back_populates='visit')
+    images: Mapped[list['Image']] = relationship('Image', back_populates='visit', passive_deletes=True)
+    videos: Mapped[list['Video']] = relationship('Video', back_populates='visit', passive_deletes=True)
+
+    services: Mapped[list['Service']] = relationship('Service', back_populates='visit', passive_deletes=True)
 
     location_id: Mapped[int] = Column(ForeignKey('locations.id'), nullable=False)
     location: Mapped['Location'] = relationship('Location')
 
-    client_id: Mapped[int] = Column(ForeignKey('clients.id'), nullable=False)
-    client: Mapped['Client'] = relationship('Client', back_populates='visits')
+    client_id: Mapped[int] = Column(ForeignKey('clients.id', ondelete='SET NULL'), nullable=False)
+    client: Mapped['Client'] = relationship('Client', back_populates='visits', passive_deletes=True)

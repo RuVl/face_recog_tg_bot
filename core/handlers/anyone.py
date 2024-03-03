@@ -58,7 +58,7 @@ async def check_if_exist_face(msg: types.Message, state: FSMContext):
     await state.update_data(check_face_token=check_face_token)  # set token to not None
 
     # Download image from the message
-    image_path, message = await download_image(msg, state, check_face_token)
+    image_path, message = await download_image(msg, state, check_face_token, additional_text='Поиск лица на фотографии\. 🔎')
     if check_face_token.completed or image_path is None:
         return
 

@@ -32,3 +32,7 @@ def adding_service_text(user: types.User, client_id: int, service: str = None) -
 
 def adding_photo_text(user: types.User, client_id: int) -> str:
     return f'`{user.id}` \- `{user.username}` добавил фото к `{client_id}` записи\!'
+
+
+def adding_video_text(user: types.User, client_id: int) -> str:
+    return f'`{user.id}` \- `{user.username}` добавил видео к `{client_id}` записи\!'
