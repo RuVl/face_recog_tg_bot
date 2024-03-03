@@ -4,7 +4,7 @@ from core.config import MEDIA_DIR
 from core.database import session_maker
 from core.database.models import Image
 from core.image_hosting import send_image
-from core.misc import str2int
+from core.misc.adapters import str2int
 
 
 async def create_image_from_path(path: str | Path, visit_id: int | str = None) -> Image:

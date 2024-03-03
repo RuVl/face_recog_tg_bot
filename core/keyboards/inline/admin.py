@@ -4,7 +4,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from core.database.methods.location import get_all_locations
 from core.database.methods.user import get_all_moderators
 from core.keyboards.inline.utils import paginate
-from core.misc import location2keyboard, moderator2keyboard
+from core.misc.adapters import location2keyboard, moderator2keyboard
 
 
 def admin_start_menu() -> InlineKeyboardMarkup:

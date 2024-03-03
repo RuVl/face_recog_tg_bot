@@ -3,7 +3,7 @@ from pathlib import Path
 from core.config import MEDIA_DIR
 from core.database import session_maker
 from core.database.models import Video
-from core.misc import str2int
+from core.misc.adapters import str2int
 
 
 async def create_video_from_path(path: str | Path, visit_id: int | str = None) -> Video:

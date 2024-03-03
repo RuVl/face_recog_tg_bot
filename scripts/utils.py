@@ -13,7 +13,7 @@ from core.database import session_maker
 from core.database.methods.client import get_all_clients
 from core.database.models import Location, Visit, Client
 from core.face_recognition.main import compare_faces
-from core.misc import str2int
+from core.misc.adapters import str2int
 from scripts.logger import rootLogger
 
 register_heif_opener()

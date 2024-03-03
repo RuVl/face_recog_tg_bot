@@ -5,7 +5,7 @@ from sqlalchemy.orm import joinedload
 
 from core.database import session_maker
 from core.database.models import Client, Visit
-from core.misc import str2int
+from core.misc.adapters import str2int
 
 
 async def get_all_clients() -> list[Client]:

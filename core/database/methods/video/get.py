@@ -2,7 +2,7 @@ from sqlalchemy import select
 
 from core.database import session_maker
 from core.database.models import Video, Visit
-from core.misc import str2int
+from core.misc.adapters import str2int
 
 
 async def get_client_videos(client_id: int | str, limit: int = None) -> list[Video]:

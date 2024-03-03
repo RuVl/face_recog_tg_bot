@@ -2,7 +2,7 @@ from sqlalchemy import select
 
 from core.database import session_maker
 from core.database.models import Location
-from core.misc import str2int
+from core.misc.adapters import str2int
 
 
 async def get_all_locations() -> list[Location]:

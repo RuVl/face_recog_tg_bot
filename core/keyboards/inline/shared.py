@@ -4,7 +4,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from core.database.methods.user import check_if_admin
 from core.database.models import Client
 from core.keyboards.inline.utils import paginate
-from core.misc import client2keyboard
+from core.misc.adapters import client2keyboard
 
 
 async def add_visit_kb(*, was_added=False, user_id: int | str = None) -> InlineKeyboardMarkup:

@@ -2,7 +2,7 @@ from sqlalchemy import select
 
 from core.database import session_maker
 from core.database.models import Image, Visit, Client
-from core.misc import str2int
+from core.misc.adapters import str2int
 
 
 async def get_image_by_id(id_: int | str) -> Image:

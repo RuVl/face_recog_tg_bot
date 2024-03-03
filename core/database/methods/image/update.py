@@ -2,7 +2,7 @@ from sqlalchemy import update
 
 from core.database import session_maker
 from core.database.models import Image
-from core.misc import str2int
+from core.misc.adapters import str2int
 
 
 async def set_visit2image(image_id: int | str, visit_id: int | str):
