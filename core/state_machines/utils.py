@@ -23,7 +23,7 @@ def _with_lock_state(func):
         async with _STATE_LOCK:
             state_data = await state.get_data()
             result = await func(state_data=state_data, *args, **kwargs)
-            await state.set_state(state_data)
+            await state.set_data(state_data)
             return result
 
     return wrapper
