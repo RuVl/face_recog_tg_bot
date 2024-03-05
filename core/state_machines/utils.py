@@ -1,14 +1,13 @@
 import asyncio
+import functools
 import logging
 from pathlib import Path
 
 from aiogram import types
 from aiogram.exceptions import TelegramBadRequest
-from aiogram.fsm.context import FSMContext
 
 from core.cancel_token import CancellationToken
 from core.state_machines.fields import *
-
 
 _STATE_LOCK = asyncio.Lock()
 
@@ -19,10 +18,15 @@ ALL_STATE_FIELDS = TOKEN_NAMES + [FACE_GALLERY_FIELD, TEMP_PATH_FIELD, LAST_MESS
 def _with_lock_state(func):
     """ Decorator to use clear_lock for use state """
 
-    async def wrapper(state: FSMContext, *args, **kwargs):
+    @functools.wraps(func)
+    async def wrapper(*args, **kwargs):
+        state = kwargs['state']
         async with _STATE_LOCK:
             state_data = await state.get_data()
-            result = await func(state_data, *args, **kwargs)
+            kwargs['state_data'] = state_data
+
+            result = await func(*args, **kwargs)
+
             await state.set_data(state_data)
             return result
 
@@ -80,6 +84,6 @@ async def _clear_path(state_data: dict):
 
 @_with_lock_state
 async def _clear_state_data(state_data: dict):
-    for key in state_data.keys():
+    for key in list(state_data.keys()):
         if key not in ALL_STATE_FIELDS:
             del state_data[key]
