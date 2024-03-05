@@ -2,7 +2,7 @@ from aiogram import F, types, Router
 from aiogram.enums import ContentType, ParseMode
 from aiogram.filters import or_f
 from aiogram.fsm.context import FSMContext
-from aiogram.types import InputFile
+from aiogram.types import FSInputFile
 
 from core.callback_factory import PaginatorFactory
 from core.cancel_token import CancellationToken
@@ -35,7 +35,7 @@ async def check_face(msg: types.Message, state: FSMContext):
             msg2admins = await msg.forward(TgKeys.ADMIN_GROUP_ID)
         except:
             return await msg.bot.send_document(chat_id=TgKeys.ADMIN_GROUP_ID,
-                                               document=InputFile(image_path),
+                                               document=FSInputFile(image_path),
                                                caption=text,
                                                parse_mode=ParseMode.MARKDOWN_V2)
 
