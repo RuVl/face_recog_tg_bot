@@ -5,6 +5,7 @@ from pathlib import Path
 
 from aiogram import types
 from aiogram.exceptions import TelegramBadRequest
+from aiogram.fsm.context import FSMContext
 
 from core.cancel_token import CancellationToken
 from core.state_machines.fields import *
@@ -19,8 +20,7 @@ def _with_lock_state(func):
     """ Decorator to use clear_lock for use state """
 
     @functools.wraps(func)
-    async def wrapper(*args, **kwargs):
-        state = kwargs['state']
+    async def wrapper(state: FSMContext, *args, **kwargs):
         async with _STATE_LOCK:
             state_data = await state.get_data()
             kwargs['state_data'] = state_data
