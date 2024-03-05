@@ -82,4 +82,4 @@ async def _clear_path(state_data: dict):
 async def _clear_state_data(state_data: dict):
     for key in state_data.keys():
         if key not in ALL_STATE_FIELDS:
-            state_data.pop(key)
+            del state_data[key]

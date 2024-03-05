@@ -5,15 +5,14 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import FSInputFile
 
 from core.callback_factory import PaginatorFactory
-from core.cancel_token import CancellationToken
 from core.database.methods.client import load_clients_profile_images, create_client, get_client
 from core.database.methods.user import check_if_admin, check_if_moderator
 from core.handlers.shared import show_client, show_clients_choosing, notify_admins
-from core.handlers.utils import download_image, find_faces, change_msg, get_token_check_function, handler_with_token, TokenCancelCheck
+from core.handlers.utils import download_image, find_faces, change_msg, handler_with_token, TokenCancelCheck
 from core.keyboards.inline import cancel_keyboard, yes_no_cancel, add_visit_kb, admin_start_menu, moderator_start_menu, anyone_start_menu
 from core.misc import TgKeys
 from core.state_machines import SharedMenu, AdminMenu, ModeratorMenu, AnyoneMenu
-from core.state_machines.clearing import cancel_all_tokens, clear_state_data
+from core.state_machines.clearing import clear_state_data
 from core.state_machines.fields import CHECK_FACE_FIELD
 from core.text import face_info_text
 from core.text.admin import hi_admin_text

@@ -1,4 +1,5 @@
 import asyncio
+import functools
 import logging
 from pathlib import Path
 from typing import Callable, Awaitable
@@ -34,15 +35,9 @@ async def token_is_canceled(token: CancellationToken, token_name: str, state: FS
     return t != token or t.canceled
 
 
-def get_token_check_function(token: CancellationToken, token_name: str, state: FSMContext) -> TokenCancelCheck:
-    async def wrapper():
-        return await token_is_canceled(token, token_name, state)
-
-    return wrapper
-
-
 def handler_with_token(token_name: str):
     def decorator(func):
+        @functools.wraps(func)
         async def wrapper(*args, **kwargs):
             state: FSMContext = kwargs['state']
             state_data = await state.get_data()
@@ -54,7 +49,7 @@ def handler_with_token(token_name: str):
             token = CancellationToken()
             await state.update_data({token_name: token})
 
-            kwargs['token_canceled'] = get_token_check_function(token, token_name, state)
+            kwargs['token_canceled'] = functools.partial(token_is_canceled, token, token_name, state)
 
             try:
                 result = await func(*args, **kwargs)
