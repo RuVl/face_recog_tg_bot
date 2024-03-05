@@ -72,7 +72,7 @@ async def check_face(msg: types.Message, state: FSMContext):
         return
 
     if encoding is None:
-        await notify_admins(f'Модератор @{msg.from_user.username} \({msg.from_user.id}\) отправил фото для поиска в бд\.\n'
+        await notify_admins(f'Модератор `{msg.from_user.username}` \({msg.from_user.id}\) отправил фото для поиска в бд\.\n'
                             f'Распознавание лиц не удалось\!')
 
         await message.edit_text('Распознавание лиц не удалось, повторите попытку\.',
@@ -82,7 +82,7 @@ async def check_face(msg: types.Message, state: FSMContext):
     await state.update_data(face_encoding=encoding)
 
     if clients is None:
-        await notify_admins(f'Модератор @{msg.from_user.username} \({msg.from_user.id}\) отправил фото для поиска в бд\.\n'
+        await notify_admins(f'Модератор `{msg.from_user.username}` \({msg.from_user.id}\) отправил фото для поиска в бд\.\n'
                             f'Такого лица нет в базе данных\!\n'
                             f'Модератору предложено добавить нового человека\.')
 
@@ -100,7 +100,7 @@ async def check_face(msg: types.Message, state: FSMContext):
     check_face_token.complete()
     await state.update_data(check_face_token=check_face_token)
 
-    await notify_admins(f'Модератор @{msg.from_user.username} \({msg.from_user.id}\) отправил фото для поиска в бд\.\n'
+    await notify_admins(f'Модератор `{msg.from_user.username}` \({msg.from_user.id}\) отправил фото для поиска в бд\.\n'
                         f'В базе данных найдено {len(clients)} похожих лиц\!\n'
                         f'Модератору предложен выбор\.')
     await show_clients_choosing(message, state)
