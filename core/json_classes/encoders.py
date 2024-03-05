@@ -32,7 +32,7 @@ class TGEncoder(json.JSONEncoder):
         elif isinstance(o, CancellationToken):
             return {
                 "_type": "CancellationToken",
-                "_value": {getattr(o, attr) for attr in o.__slots__}
+                "_value": {attr: getattr(o, attr) for attr in o.__slots__}
             }
         elif (_type := type(o).__name__) in models.__all__:
             _value = o.__dict__
