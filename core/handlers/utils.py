@@ -54,10 +54,12 @@ def handler_with_token(token_name: str):
             token = CancellationToken()
             await state.update_data({token_name: token})
 
-            token_canceled = get_token_check_function(token, token_name, state)
+            kwargs['token_canceled'] = get_token_check_function(token, token_name, state)
 
             try:
-                result = await func(token_canceled=token_canceled, *args, **kwargs)
+                result = await func(*args, **kwargs)
+            except Exception as e:
+                raise e
             finally:
                 await complete_token(state, token_name)
 
