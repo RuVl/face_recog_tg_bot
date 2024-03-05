@@ -23,10 +23,7 @@ def _with_lock_state(func):
     async def wrapper(state: FSMContext, *args, **kwargs):
         async with _STATE_LOCK:
             state_data = await state.get_data()
-            kwargs['state_data'] = state_data
-
-            result = await func(*args, **kwargs)
-
+            result = await func(state_data, *args, **kwargs)
             await state.set_data(state_data)
             return result
 
