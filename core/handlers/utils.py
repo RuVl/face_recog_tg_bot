@@ -1,6 +1,7 @@
+import asyncio
 import logging
-from asyncio import Lock
 from pathlib import Path
+from typing import Callable, Awaitable
 
 import numpy as np
 from PIL import Image, UnidentifiedImageError, ImageOps, ImageFile
@@ -8,21 +9,66 @@ from aiogram import types, methods
 from aiogram.enums import ParseMode
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
-from core.cancel_token import CancellationToken
 from deepface import DeepFace
 
+from core.cancel_token import CancellationToken
 from core.config import SUPPORTED_IMAGE_TYPES, TEMP_DIR, MODEL, BACKEND, SUPPORTED_VIDEO_TYPES
 from core.database.methods.client import get_all_clients
 from core.database.models import Client
 from core.face_recognition.main import compare_faces
 from core.keyboards.inline import cancel_keyboard
+from core.state_machines.clearing import clear_all_in_one, cancel_token, complete_token
+from core.state_machines.fields import LAST_MESSAGE_FIELD
 from core.text import file_downloaded
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
+TokenCancelCheck = Callable[[], Awaitable[bool]]
+
+change_msg_lock = asyncio.Lock()
+
+
+async def token_is_canceled(token: CancellationToken, token_name: str, state: FSMContext) -> bool:
+    state_data = await state.get_data()
+    t: CancellationToken = state_data.get(token_name)
+    return t != token or t.canceled
+
+
+def get_token_check_function(token: CancellationToken, token_name: str, state: FSMContext) -> TokenCancelCheck:
+    async def wrapper():
+        return await token_is_canceled(token, token_name, state)
+
+    return wrapper
+
+
+def handler_with_token(token_name: str):
+    def decorator(func):
+        async def wrapper(*args, **kwargs):
+            state: FSMContext = kwargs['state']
+            state_data = await state.get_data()
+
+            token: CancellationToken = state_data.get(token_name)
+            if token is not None and not token.completed:
+                await cancel_token(state, token_name)
+
+            token = CancellationToken()
+            await state.update_data({token_name: token})
+
+            token_canceled = get_token_check_function(token, token_name, state)
+
+            try:
+                result = await func(token_canceled=token_canceled, *args, **kwargs)
+            finally:
+                await complete_token(state, token_name)
+
+            return result
+        return wrapper
+    return decorator
+
 
 async def download_document(msg: types.Message, state: FSMContext,
-                            supported_types: dict[str, str], cancellation_token: CancellationToken) -> tuple[Path | None, types.Message]:
+                            supported_types: dict[str, str],
+                            token_canceled: TokenCancelCheck) -> tuple[Path | None, types.Message]:
     """ Download the document from the msg. Cancellation token for stop downloading. Editable message for alarm if it can't be downloaded """
 
     # Unsupported file type
@@ -32,7 +78,6 @@ async def download_document(msg: types.Message, state: FSMContext,
                       reply_markup=cancel_keyboard('Назад'), parse_mode=ParseMode.MARKDOWN_V2),
             state
         )
-        cancellation_token.complete()
         return None, message
 
     message = await change_msg(
@@ -45,7 +90,7 @@ async def download_document(msg: types.Message, state: FSMContext,
     filename = msg.document.file_unique_id + supported_types[msg.document.mime_type]
     document_path = TEMP_DIR / filename
 
-    if cancellation_token.cancelled:
+    if await token_canceled():
         return None, message
 
     # Download image
@@ -56,18 +101,17 @@ async def download_document(msg: types.Message, state: FSMContext,
         message = await message.edit_text('Загрузка файла не удалась\. 😭\n'
                                           'Попробуйте ещё раз или обратитесь к админам\.',
                                           reply_markup=cancel_keyboard('Назад'), parse_mode=ParseMode.MARKDOWN_V2)
-        cancellation_token.complete()
         return None, message
 
         # Check if the task canceled
-    if cancellation_token.cancelled:
+    if await token_canceled():
         document_path.unlink(missing_ok=True)
         return None, message
 
     return document_path, message
 
 
-async def download_image(msg: types.Message, state: FSMContext, cancellation_token: CancellationToken,
+async def download_image(msg: types.Message, state: FSMContext, token_canceled: TokenCancelCheck,
                          *, additional_text=None, success_keyboard=cancel_keyboard()) -> tuple[Path | None, types.Message]:
     """
         Download the document from msg to TEMP_DIR, check if it is an image and validate its resolution.
@@ -81,10 +125,9 @@ async def download_image(msg: types.Message, state: FSMContext, cancellation_tok
             msg.reply('Файл слишком большой\! \(Не более 10мб\) 😖', reply_markup=cancel_keyboard('Назад'), parse_mode=ParseMode.MARKDOWN_V2),
             state
         )
-        cancellation_token.complete()
         return None, message
 
-    document_path, message = await download_document(msg, state, SUPPORTED_IMAGE_TYPES, cancellation_token)
+    document_path, message = await download_document(msg, state, SUPPORTED_IMAGE_TYPES, token_canceled)
 
     # Check image resolution
     try:
@@ -95,7 +138,6 @@ async def download_image(msg: types.Message, state: FSMContext, cancellation_tok
             await message.edit_text('Ширина и высота фотографии в сумме не должны превышать 10000\!',
                                     reply_markup=cancel_keyboard('Назад'), parse_mode=ParseMode.MARKDOWN_V2)
             document_path.unlink(missing_ok=True)
-            cancellation_token.complete()
             return None, message
 
         if max(w, h) / min(w, h) > 20:
@@ -103,7 +145,6 @@ async def download_image(msg: types.Message, state: FSMContext, cancellation_tok
                                     reply_markup=cancel_keyboard('Назад'), parse_mode=ParseMode.MARKDOWN_V2)
 
             document_path.unlink(missing_ok=True)
-            cancellation_token.complete()
             return None, message
 
         # Transpose image by exif data
@@ -116,7 +157,10 @@ async def download_image(msg: types.Message, state: FSMContext, cancellation_tok
                                 reply_markup=cancel_keyboard('Назад'), parse_mode=ParseMode.MARKDOWN_V2)
 
         document_path.unlink(missing_ok=True)
-        cancellation_token.complete()
+        return None, message
+
+    if await token_canceled():
+        document_path.unlink(missing_ok=True)
         return None, message
 
     text = file_downloaded()
@@ -128,7 +172,7 @@ async def download_image(msg: types.Message, state: FSMContext, cancellation_tok
     return document_path, message
 
 
-async def download_video(msg: types.Message, state: FSMContext, cancellation_token: CancellationToken,
+async def download_video(msg: types.Message, state: FSMContext, token_canceled: TokenCancelCheck,
                          *, additional_text=None, success_keyboard=cancel_keyboard()) -> tuple[Path | None, types.Message]:
     """
         Download the document from msg to TEMP_DIR, check if it is an image and validate its resolution.
@@ -142,10 +186,9 @@ async def download_video(msg: types.Message, state: FSMContext, cancellation_tok
             msg.reply('Файл слишком большой\! \(Не более 20мб\) 😖', reply_markup=cancel_keyboard('Назад'), parse_mode=ParseMode.MARKDOWN_V2),
             state
         )
-        cancellation_token.complete()
         return None, message
 
-    document_path, message = await download_document(msg, state, SUPPORTED_VIDEO_TYPES, cancellation_token)
+    document_path, message = await download_document(msg, state, SUPPORTED_VIDEO_TYPES, token_canceled)
 
     text = file_downloaded()
     if additional_text is not None:
@@ -156,11 +199,11 @@ async def download_video(msg: types.Message, state: FSMContext, cancellation_tok
     return document_path, message
 
 
-async def find_faces(image_path: Path, msg: types.Message, cancellation_token: CancellationToken) -> tuple[list[Client] | None, dict | None]:
+async def find_faces(image_path: Path, msg: types.Message, token_canceled: TokenCancelCheck) -> tuple[list[Client] | None, dict | None]:
     """
         :param image_path: path to image
         :param msg: the editable message
-        :param cancellation_token: the cancellation token
+        :param token_canceled: the cancel check function
 
         Find faces on an image and check matches in the database.
         If no faces are found or faces more than 1, it returns None and completes the cancellation token.
@@ -170,7 +213,7 @@ async def find_faces(image_path: Path, msg: types.Message, cancellation_token: C
 
     embeddings = DeepFace.represent(str(image_path), model_name=MODEL, detector_backend=BACKEND, enforce_detection=False)
 
-    if cancellation_token.cancelled:
+    if await token_canceled():
         return None, None
 
     embeddings = list(filter(lambda e: e['face_confidence'] > .75, embeddings))
@@ -180,14 +223,12 @@ async def find_faces(image_path: Path, msg: types.Message, cancellation_token: C
                             f'На фотографии должен быть только 1 человек\.\n'
                             f'Попробуйте отправить другую фотографию\.',
                             reply_markup=cancel_keyboard('Назад'), parse_mode=ParseMode.MARKDOWN_V2)
-        cancellation_token.complete()
         return None, None
 
     if len(embeddings) == 0:
         await msg.edit_text('Ни одного лица на фотографии не обнаружено\!\n'
                             'Попробуйте отправить другую фотографию\.',
                             reply_markup=cancel_keyboard('Назад'), parse_mode=ParseMode.MARKDOWN_V2)
-        cancellation_token.complete()
         return None, None
 
     await msg.edit_text('📇 Обнаружено 1 лицо\!\n'
@@ -200,8 +241,8 @@ async def find_faces(image_path: Path, msg: types.Message, cancellation_token: C
     clients = await get_all_clients()
     known_faces = [client.face_encoding for client in clients]
 
-    if cancellation_token.cancelled:
-        return None, None
+    if await token_canceled():
+        return None, face
 
     # Compare with known faces
     results = compare_faces(known_faces, face)
@@ -216,59 +257,6 @@ async def find_faces(image_path: Path, msg: types.Message, cancellation_token: C
     return [clients[i] for i in indexes], face  # Return an array of clients and face encoding
 
 
-CLEAR_LOCK = Lock()
-
-
-async def clear_cancellation_tokens(state: FSMContext):
-    state_data = await state.get_data()
-
-    check_face_token: CancellationToken = state_data.get('check_face_token')
-    if check_face_token is not None and not check_face_token.completed:
-        check_face_token.cancel()
-
-    add_image_token: CancellationToken = state_data.get('add_image_token')
-    if add_image_token is not None and not add_image_token.completed:
-        add_image_token.cancel()
-
-    add_video_token: CancellationToken = state_data.get('add_video_token')
-    if add_video_token is not None and not add_video_token.completed:
-        add_video_token.cancel()
-
-
-async def clear_gallery(state: FSMContext):
-    async with CLEAR_LOCK:
-        state_data = await state.get_data()
-
-    face_gallery_msg: list[types.Message] = state_data.get('face_gallery_msg')
-    if face_gallery_msg is not None and isinstance(face_gallery_msg, list):
-        for msg in face_gallery_msg:
-            try:
-                await msg.delete()
-            except TelegramBadRequest as e:
-                logging.warning(f'Exception during delete gallery: {e.message}')
-
-
-async def clear_path(state: FSMContext):
-    async with CLEAR_LOCK:
-        state_data = await state.get_data()
-
-    document_path = state_data.get('temp_image_path')
-    if document_path is not None:
-        Path(document_path).unlink(missing_ok=True)
-
-
-async def clear_state_data(state: FSMContext, *, clear_state=False):
-    """ Delete file in temp_image_path and clear state """
-
-    await clear_cancellation_tokens(state)
-    await clear_gallery(state)
-    await clear_path(state)
-
-    if clear_state:
-        async with CLEAR_LOCK:
-            await state.clear()
-
-
 async def change_msg(awaitable_msg: methods.TelegramMethod[types.Message], state: FSMContext,
                      *, clear_state=False) -> types.Message:
     """
@@ -277,20 +265,20 @@ async def change_msg(awaitable_msg: methods.TelegramMethod[types.Message], state
         If clear_state is True, then state.clear()
     """
 
-    async with CLEAR_LOCK:
+    async with change_msg_lock:
         state_data = await state.get_data()
 
-        last_msg: types.Message = state_data.get('last_msg')
+        last_msg: types.Message = state_data.get(LAST_MESSAGE_FIELD)
         if last_msg is not None:
             try:
                 await last_msg.delete()
             except TelegramBadRequest as e:
-                logging.warning(f'Exception during delete last_msg: {e.message}')
+                logging.warning(f'Exception during delete last message: {e.message}')
 
         if clear_state:
-            await clear_state_data(state, clear_state=True)
+            await clear_all_in_one(state, clear_state=True)
 
         msg = await awaitable_msg
-        await state.update_data(last_msg=msg)
+        await state.update_data({LAST_MESSAGE_FIELD: msg})
 
     return msg

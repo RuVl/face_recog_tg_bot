@@ -3,13 +3,14 @@ from aiogram.enums import ContentType, ParseMode
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.types import FSInputFile
-from core.cancel_token import CancellationToken
 
 from core.database.methods.image import get_image_by_id
-from core.handlers.utils import download_image, find_faces, clear_state_data, change_msg
+from core.handlers.utils import download_image, find_faces, change_msg, handler_with_token, TokenCancelCheck
 from core.keyboards.inline import anyone_start_menu, cancel_keyboard
 from core.state_machines import AnyoneMenu
-from core.text import send_me_image, cancel_previous_processing, file_downloaded
+from core.state_machines.clearing import clear_all_in_one
+from core.state_machines.fields import CHECK_FACE_FIELD
+from core.text import send_me_image
 
 anyone_router = Router()
 
@@ -41,32 +42,21 @@ async def start_menu(callback: types.CallbackQuery, state: FSMContext):
 
 # '/start' -> 'check_if_exist' -> document provided
 @anyone_router.message(AnyoneMenu.CHECK_IF_EXIST, F.content_type == ContentType.DOCUMENT)
-async def check_if_exist_face(msg: types.Message, state: FSMContext):
+@handler_with_token(CHECK_FACE_FIELD)
+async def check_if_exist_face(msg: types.Message, state: FSMContext, token_canceled: TokenCancelCheck):
     """ Validate and download the provided file. Find a face on it and check if it exists in db. """
 
-    state_data = await state.get_data()
-    check_face_token: CancellationToken = state_data.get('check_face_token')
-
-    # Face recognition is still running
-    if check_face_token is not None and not check_face_token.completed:
-        await msg.answer(cancel_previous_processing(),
-                         reply_markup=cancel_keyboard('Отменить'), parse_mode=ParseMode.MARKDOWN_V2)
-        return
-
-    # cancel to stop, completed if exited
-    check_face_token = CancellationToken()
-    await state.update_data(check_face_token=check_face_token)  # set token to not None
-
     # Download image from the message
-    image_path, message = await download_image(msg, state, check_face_token, additional_text='Поиск лица на фотографии\. 🔎')
-    if check_face_token.completed or image_path is None:
+    image_path, message = await download_image(msg, state, token_canceled, additional_text='Поиск лица на фотографии\. 🔎')
+
+    if image_path is None or await token_canceled():
         return
 
     await state.update_data(temp_image_path=image_path)
 
-    clients, encoding = await find_faces(image_path, message, check_face_token)
+    clients, encoding = await find_faces(image_path, message, token_canceled)
 
-    if check_face_token.completed:
+    if await token_canceled():
         return
 
     if encoding is None:
@@ -97,15 +87,13 @@ async def check_if_exist_face(msg: types.Message, state: FSMContext):
             reply_markup=cancel_keyboard('Назад'), parse_mode=ParseMode.MARKDOWN_V2
         )
 
-    check_face_token.complete()
-
 
 # /start -> 'check_if_exist' -> document provided -> 'cancel'
 @anyone_router.callback_query(F.data == 'cancel', AnyoneMenu.CHECK_IF_EXIST)
 async def cancel_check_face(callback: types.CallbackQuery, state: FSMContext):
     """ Return to the main menu """
 
-    await clear_state_data(state)
+    await clear_all_in_one(state)
     await state.set_state(AnyoneMenu.START)
 
     await callback.answer()

@@ -8,7 +8,6 @@ from aiogram.fsm.context import FSMContext
 
 from core.config import PHONE_NUMBER_REGION
 from core.database.methods.client import get_client, get_client_by_phone
-from core.database.methods.image import get_image_by_id
 from core.filters import IsAdminOrModeratorMessageFilter, IsAdminOrModeratorCallbackFilter
 from core.handlers.shared import show_client
 from core.handlers.shared.changer import shared_changer_router

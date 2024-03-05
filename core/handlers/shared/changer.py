@@ -17,10 +17,11 @@ from core.database.methods.visit import create_visit, update_visit_name, update_
 from core.database.methods.visit.update import update_visit_phone_number
 from core.handlers.shared import show_client
 from core.handlers.shared.recogniser import return2start_menu
-from core.handlers.utils import change_msg, download_image, clear_cancellation_tokens, download_video
+from core.handlers.utils import change_msg, download_image, download_video
 from core.keyboards.inline import add_visit_info_kb, cancel_keyboard, add_visit_kb, yes_no_cancel
 from core.misc import TgKeys
 from core.state_machines import SharedMenu
+from core.state_machines.clearing import cancel_all_tokens
 from core.text import exit_visit_text, adding_name_text, adding_social_media_text, adding_service_text, adding_photo_text, face_info_text, \
     created_visit_text, add_image_text, add_service_text, add_social_media_text, add_name_text, cancel_previous_processing, add_phone_number_text, \
     add_video_text
@@ -276,7 +277,7 @@ async def add_visit_images(msg: types.Message, state: FSMContext):
             )
             return
         else:
-            await clear_cancellation_tokens(state)
+            await cancel_all_tokens(state)
 
     add_image_token = CancellationToken()
     await state.update_data(add_image_token=add_image_token)  # set token to not None
@@ -325,7 +326,7 @@ async def add_visit_videos(msg: types.Message, state: FSMContext):
             )
             return
         else:
-            await clear_cancellation_tokens(state)
+            await cancel_all_tokens(state)
 
     add_video_token = CancellationToken()
     await state.update_data(add_video_token=add_video_token)  # set token to not None
@@ -369,7 +370,7 @@ async def add_visit_videos(msg: types.Message, state: FSMContext):
 async def add_visit_data_back(callback: types.CallbackQuery, state: FSMContext):
     """ Return to adding new visit data """
 
-    await clear_cancellation_tokens(state)
+    await cancel_all_tokens(state)
 
     state_data = await state.get_data()
     client_id = state_data.get('client_id')

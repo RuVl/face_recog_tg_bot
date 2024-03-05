@@ -10,11 +10,12 @@ from aiogram.types import FSInputFile, InputMediaPhoto
 from core import bot
 from core.database.methods.image import get_client_images
 from core.database.models import Client, Image
-from core.handlers.utils import change_msg, clear_gallery
+from core.handlers.utils import change_msg
 from core.keyboards.inline import cancel_keyboard
 from core.keyboards.inline.shared import select_clients_kb
 from core.misc import TgKeys
 from core.state_machines import SharedMenu
+from core.state_machines.clearing import clear_gallery
 from core.text import face_info_text
 from core.text.utils import escape_markdown_v2
 
