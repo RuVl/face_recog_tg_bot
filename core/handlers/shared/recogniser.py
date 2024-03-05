@@ -12,7 +12,7 @@ from core.handlers.utils import download_image, find_faces, change_msg, handler_
 from core.keyboards.inline import cancel_keyboard, yes_no_cancel, add_visit_kb, admin_start_menu, moderator_start_menu, anyone_start_menu
 from core.misc import TgKeys
 from core.state_machines import SharedMenu, AdminMenu, ModeratorMenu, AnyoneMenu
-from core.state_machines.clearing import clear_state_data
+from core.state_machines.clearing import clear_all_in_one, clear_gallery
 from core.state_machines.fields import CHECK_FACE_FIELD
 from core.text import face_info_text
 from core.text.admin import hi_admin_text
@@ -103,7 +103,7 @@ async def check_face(msg: types.Message, state: FSMContext, token_canceled: Toke
 async def return2start_menu(callback: types.CallbackQuery, state: FSMContext):
     """ Returns user to moderator or admin menu (or nothing if user neither admin nor moderator) """
 
-    await clear_state_data(state)
+    await clear_all_in_one(state, clear_state=True)
 
     if await check_if_admin(callback.from_user.id):
         new_state = AdminMenu.START
@@ -185,7 +185,7 @@ async def choose_face(callback: types.CallbackQuery, state: FSMContext):
             await state.set_state(SharedMenu.SHOW_FACE_INFO)
             await state.update_data(client_id=client.id)
 
-            await clear_state_data(state)
+            await clear_gallery(state)
 
             keyboard = await add_visit_kb(user_id=callback.from_user.id)
             text = await face_info_text(client_id, callback.from_user.id)
