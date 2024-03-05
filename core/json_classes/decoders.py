@@ -32,7 +32,10 @@ class TGDecoder(json.JSONDecoder):
             case 'datetime.datetime':
                 return datetime.fromisoformat(o['_value'])
             case 'CancellationToken':
-                return CancellationToken(**o['_value'])
+                obj = CancellationToken()
+                for attr, value in o['_value'].items():
+                    setattr(obj, attr, value)
+                return obj
             case _type if _type.startswith('models.') and _type[7:] in models.__all__:
                 class_ = getattr(models, _type[7:])
                 return class_(**o['_value'])
