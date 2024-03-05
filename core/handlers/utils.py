@@ -1,4 +1,5 @@
 import logging
+from asyncio import Lock
 from pathlib import Path
 
 import numpy as np
@@ -215,6 +216,9 @@ async def find_faces(image_path: Path, msg: types.Message, cancellation_token: C
     return [clients[i] for i in indexes], face  # Return an array of clients and face encoding
 
 
+CLEAR_LOCK = Lock()
+
+
 async def clear_cancellation_tokens(state: FSMContext):
     state_data = await state.get_data()
 
@@ -232,7 +236,8 @@ async def clear_cancellation_tokens(state: FSMContext):
 
 
 async def clear_gallery(state: FSMContext):
-    state_data = await state.get_data()
+    async with CLEAR_LOCK:
+        state_data = await state.get_data()
 
     face_gallery_msg: list[types.Message] = state_data.get('face_gallery_msg')
     if face_gallery_msg is not None and isinstance(face_gallery_msg, list):
@@ -244,7 +249,8 @@ async def clear_gallery(state: FSMContext):
 
 
 async def clear_path(state: FSMContext):
-    state_data = await state.get_data()
+    async with CLEAR_LOCK:
+        state_data = await state.get_data()
 
     document_path = state_data.get('temp_image_path')
     if document_path is not None:
@@ -259,7 +265,8 @@ async def clear_state_data(state: FSMContext, *, clear_state=False):
     await clear_path(state)
 
     if clear_state:
-        await state.clear()
+        async with CLEAR_LOCK:
+            await state.clear()
 
 
 async def change_msg(awaitable_msg: methods.TelegramMethod[types.Message], state: FSMContext,
@@ -270,19 +277,20 @@ async def change_msg(awaitable_msg: methods.TelegramMethod[types.Message], state
         If clear_state is True, then state.clear()
     """
 
-    state_data = await state.get_data()
+    async with CLEAR_LOCK:
+        state_data = await state.get_data()
 
-    last_msg: types.Message = state_data.get('last_msg')
-    if last_msg is not None:
-        try:
-            await last_msg.delete()
-        except TelegramBadRequest as e:
-            logging.warning(f'Exception during delete last_msg: {e.message}')
+        last_msg: types.Message = state_data.get('last_msg')
+        if last_msg is not None:
+            try:
+                await last_msg.delete()
+            except TelegramBadRequest as e:
+                logging.warning(f'Exception during delete last_msg: {e.message}')
 
-    if clear_state:
-        await clear_state_data(state, clear_state=True)
+        if clear_state:
+            await clear_state_data(state, clear_state=True)
 
-    msg = await awaitable_msg
-    await state.update_data(last_msg=msg)
+        msg = await awaitable_msg
+        await state.update_data(last_msg=msg)
 
     return msg

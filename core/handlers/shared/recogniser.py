@@ -54,10 +54,12 @@ async def check_face(msg: types.Message, state: FSMContext):
             return
         else:
             await clear_state_data(state)
+            state_data = await state.get_data()
 
     # cancel to stop, completed if exited
     check_face_token = CancellationToken()
-    await state.update_data(check_face_token=check_face_token)  # set token to not None
+    state_data['check_face_token'] = check_face_token
+    await state.set_data(state_data)  # set token to not None
 
     # Download image from the message
     image_path, message = await download_image(msg, state, check_face_token, additional_text='Поиск лица на фотографии\. 🔎')
@@ -66,6 +68,7 @@ async def check_face(msg: types.Message, state: FSMContext):
 
     await state.update_data(temp_image_path=image_path)
 
+    # Find face on image and compare with faces in db
     clients, encoding = await find_faces(image_path, message, check_face_token)
 
     if check_face_token.completed:
@@ -79,26 +82,29 @@ async def check_face(msg: types.Message, state: FSMContext):
                                 reply_markup=cancel_keyboard('Назад'), parse_mode=ParseMode.MARKDOWN_V2)
         return
 
-    await state.update_data(face_encoding=encoding)
-
+    # Face not found in db
     if clients is None:
         await notify_admins(f'Модератор `{msg.from_user.username}` \({msg.from_user.id}\) отправил фото для поиска в бд\.\n'
                             f'Такого лица нет в базе данных\!\n'
                             f'Модератору предложено добавить нового человека\.')
 
         await state.set_state(SharedMenu.NOT_FOUND)
+        await state.update_data(face_encoding=encoding)
+
         await message.edit_text('Нет в базе\! 🤯\n'
                                 'Добавить такого человека?',
                                 reply_markup=yes_no_cancel(None), parse_mode=ParseMode.MARKDOWN_V2)
         return
 
+    # Get the list of possible clients by their ids and update check_face_token
     clients = await load_clients_profile_images(clients)
-
-    await state.update_data(possible_clients=clients)
-    await state.set_state(SharedMenu.CHOOSE_FACE)
-
     check_face_token.complete()
-    await state.update_data(check_face_token=check_face_token)
+
+    if check_face_token.completed:
+        return
+
+    await state.update_data(face_encoding=encoding, possible_clients=clients, check_face_token=check_face_token)
+    await state.set_state(SharedMenu.CHOOSE_FACE)
 
     await notify_admins(f'Модератор `{msg.from_user.username}` \({msg.from_user.id}\) отправил фото для поиска в бд\.\n'
                         f'В базе данных найдено {len(clients)} похожих лиц\!\n'

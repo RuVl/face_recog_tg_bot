@@ -9,6 +9,9 @@ from . import Base, Location
 class User(Base):
     """
         Таблица пользователей бота (модераторы и админы)
+        If you are admin do not set is_moderator to True.
+        Admin is the moderator with privileges.
+        Using is_admin and is_moderator together give you undefined behavior.
     """
 
     __tablename__ = 'users'
