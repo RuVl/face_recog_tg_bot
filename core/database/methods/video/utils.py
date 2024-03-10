@@ -23,14 +23,14 @@ async def _send_video2cloud(video_id: str | int, path: str | Path):
         'public_url': cloud_obj.public_url,
         'type': cloud_obj.type,
         'path': cloud_obj.path,
-        'modified': cloud_obj.modified,
+        'modified': cloud_obj.modified.strftime('%d-%m-%Y %H:%M:%S'),
         'mime_type': cloud_obj.mime_type,
         'name': cloud_obj.name,
         'antivirus_status': cloud_obj.antivirus_status,
         'size': cloud_obj.size,
         'preview': cloud_obj.preview,
         'public_key': cloud_obj.public_key,
-        'created': cloud_obj.created,
+        'created': cloud_obj.created.strftime('%d-%m-%Y %H:%M:%S'),
         'sha256': cloud_obj.sha256,
         'md5': cloud_obj.md5
     }
