@@ -23,7 +23,7 @@ async def upload_file(file_path: str | Path, dir2copy: str | Path, base_name: st
     shutil.move(file_path, new_path, shutil.copy2)
 
     logging.info(f"Sending file {file_path} to cloud storage")
-    async with yadisk.AsyncClient(CloudStorageKeys.API_TOKEN, session='aiohttp') as client:
+    async with yadisk.AsyncClient(token=CloudStorageKeys.API_TOKEN, session='aiohttp') as client:
         if not await client.exists(CLOUD_FOLDER):
             await client.mkdir(CLOUD_FOLDER)
 
