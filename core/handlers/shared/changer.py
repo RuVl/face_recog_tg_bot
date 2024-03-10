@@ -1,5 +1,4 @@
 import logging
-import traceback
 
 import phonenumbers
 from aiogram import types, F, Bot, Router
@@ -154,8 +153,10 @@ async def alert2admins(bot: Bot, user: types.User, state: FSMContext, **kwargs):
             text = adding_service_text(user, client_id, **kwargs)
         case SharedMenu.ADD_VISIT_IMAGES:
             text = adding_photo_text(user, client_id)
-        case SharedMenu.ADD_VISIT_IMAGES:
+        case SharedMenu.ADD_VISIT_VIDEOS:
             text = adding_video_text(user, client_id)
+        case _:
+            raise NotImplementedError()
 
     await bot.send_message(TgKeys.ADMIN_GROUP_ID, text, parse_mode=ParseMode.MARKDOWN_V2)
 
@@ -309,8 +310,7 @@ async def add_visit_videos(msg: types.Message, state: FSMContext, token_canceled
         await create_video_from_path(video_path, visit_id)
         await alert2admins(msg.bot, msg.from_user, state)
     except Exception as e:
-        logging.error(str(e))
-        logging.error(traceback.format_exc())
+        logging.error(e)
 
         await change_msg(
             msg.reply('Что\-то пошло не так\! 😟\n\n' + add_video_text(),
