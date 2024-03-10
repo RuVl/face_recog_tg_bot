@@ -17,12 +17,7 @@ async def _send_video2cloud(video_id: str | int, path: str | Path):
         logging.warning('Cannot upload video!')
         return
 
-    logging.info(f'PATH: {cloud_obj.path} HREF: {cloud_obj.href}')
-    cloud_data = {
-        'path': cloud_obj.path,
-        'href': cloud_obj.href,
-        'public_url': cloud_obj.public_url
-    }
+    cloud_data = cloud_obj.__dict__
 
     logging.info(f"Cutting video's ({video_id}) public_url...")
     url = await cut_url(cloud_obj.public_url)
