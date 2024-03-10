@@ -184,7 +184,7 @@ async def download_video(msg: types.Message, state: FSMContext, token_canceled: 
     """
 
     # File is too big
-    if msg.document.file_size > 20 * 1024 * 1024:
+    if msg.video.file_size > 20 * 1024 * 1024:
         message = await change_msg(
             msg.reply('Файл слишком большой\! \(Не более 20мб\) 😖', reply_markup=cancel_keyboard('Назад'), parse_mode=ParseMode.MARKDOWN_V2),
             state
