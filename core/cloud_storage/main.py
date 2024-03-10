@@ -36,9 +36,8 @@ async def upload_file(file_path: str | Path, dir2copy: str | Path, base_name: st
 
         try:
             await client.upload(str(new_path.absolute()), upload_path)
-        except YaDiskError as e:
-            logging.error(e)
-            traceback.print_exception(type(e), e, e.__traceback__)
+        except YaDiskError:
+            logging.error(traceback.format_exc())
 
             if not await client.exists(upload_path):
                 return None, new_path
