@@ -23,4 +23,7 @@ async def create_video_from_path(path: str | Path, visit_id: int | str) -> Video
         await session.refresh(video)
 
         _ = asyncio.create_task(_send_video2cloud(video.id, path))
+        # allow the task to run
+        await asyncio.sleep(0)
+
         return video
