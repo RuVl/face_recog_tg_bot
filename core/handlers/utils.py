@@ -42,13 +42,16 @@ def handler_with_token(token_name: str):
             state: FSMContext = kwargs['state']
             state_data = await state.get_data()
 
+            # Check if token completed otherwise cancel it
             token: CancellationToken = state_data.get(token_name)
             if token is not None and not token.completed:
                 await cancel_token(state, token_name)
 
+            # Generate new cancellation token
             token = CancellationToken()
             await state.update_data({token_name: token})
 
+            # Add token_canceled to func parameters
             kwargs['token_canceled'] = functools.partial(token_is_canceled, token, token_name, state)
 
             try:

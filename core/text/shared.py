@@ -44,7 +44,7 @@ def add_image_text() -> str:
 
 
 def add_video_text() -> str:
-    return 'Отправьте мне `видео` как документ\.'
+    return 'Отправьте мне `видео`\.'
 
 
 async def face_info_text(

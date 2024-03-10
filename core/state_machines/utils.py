@@ -12,7 +12,7 @@ from core.state_machines.fields import *
 
 _STATE_LOCK = asyncio.Lock()
 
-TOKEN_NAMES = [CHECK_FACE_FIELD, ADDING_IMAGE_FIELD, ADDING_VIDEO_FIELD]
+TOKEN_NAMES = [CHECK_FACE_TOKEN, ADDING_IMAGE_TOKEN, ADDING_VIDEO_TOKEN]
 ALL_STATE_FIELDS = TOKEN_NAMES + [FACE_GALLERY_FIELD, TEMP_PATH_FIELD, LAST_MESSAGE_FIELD]
 
 
@@ -54,8 +54,8 @@ async def _cancel_all_tokens(state_data: dict):
         if token_name not in state_data:
             continue
 
-        token: CancellationToken = state_data[token_name]
-        if not token.completed:
+        token: CancellationToken = state_data.get(token_name)
+        if token and not token.completed:
             token.cancel()
 
 

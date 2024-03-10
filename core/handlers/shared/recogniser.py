@@ -13,7 +13,7 @@ from core.keyboards.inline import cancel_keyboard, yes_no_cancel, add_visit_kb, 
 from core.misc import TgKeys
 from core.state_machines import SharedMenu, AdminMenu, ModeratorMenu, AnyoneMenu
 from core.state_machines.clearing import clear_all_in_one, clear_gallery
-from core.state_machines.fields import CHECK_FACE_FIELD
+from core.state_machines.fields import CHECK_FACE_TOKEN
 from core.text import face_info_text
 from core.text.admin import hi_admin_text
 from core.text.moderator import hi_moderator_text
@@ -23,7 +23,7 @@ shared_recognizer_router = Router()
 
 # /start -> 'check_face' -> document provided
 @shared_recognizer_router.message(SharedMenu.CHECK_FACE, F.content_type == ContentType.DOCUMENT)
-@handler_with_token(token_name=CHECK_FACE_FIELD)
+@handler_with_token(token_name=CHECK_FACE_TOKEN)
 async def check_face(msg: types.Message, state: FSMContext, token_canceled: TokenCancelCheck):
     """ Validate and download the provided file. Find a face on it and compare with others. """
 

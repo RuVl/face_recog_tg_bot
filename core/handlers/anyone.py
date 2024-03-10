@@ -9,7 +9,7 @@ from core.handlers.utils import download_document, find_faces, change_msg, handl
 from core.keyboards.inline import anyone_start_menu, cancel_keyboard
 from core.state_machines import AnyoneMenu
 from core.state_machines.clearing import clear_all_in_one
-from core.state_machines.fields import CHECK_FACE_FIELD
+from core.state_machines.fields import CHECK_FACE_TOKEN
 from core.text import send_me_image
 
 anyone_router = Router()
@@ -42,7 +42,7 @@ async def start_menu(callback: types.CallbackQuery, state: FSMContext):
 
 # '/start' -> 'check_if_exist' -> document provided
 @anyone_router.message(AnyoneMenu.CHECK_IF_EXIST, F.content_type == ContentType.DOCUMENT)
-@handler_with_token(CHECK_FACE_FIELD)
+@handler_with_token(CHECK_FACE_TOKEN)
 async def check_if_exist_face(msg: types.Message, state: FSMContext, token_canceled: TokenCancelCheck):
     """ Validate and download the provided file. Find a face on it and check if it exists in db. """
 

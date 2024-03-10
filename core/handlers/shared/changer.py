@@ -6,7 +6,6 @@ from aiogram.enums import ContentType, ParseMode
 from aiogram.filters import or_f
 from aiogram.fsm.context import FSMContext
 
-from core.cancel_token import CancellationToken
 from core.config import PHONE_NUMBER_REGION
 from core.database.methods.client import client_have_visit, delete_client
 from core.database.methods.image import create_image_from_path
@@ -17,13 +16,14 @@ from core.database.methods.visit import create_visit, update_visit_name, update_
 from core.database.methods.visit.update import update_visit_phone_number
 from core.handlers.shared import show_client
 from core.handlers.shared.recogniser import return2start_menu
-from core.handlers.utils import change_msg, download_document, download_video
+from core.handlers.utils import change_msg, download_document, download_video, handler_with_token, TokenCancelCheck
 from core.keyboards.inline import add_visit_info_kb, cancel_keyboard, add_visit_kb, yes_no_cancel
 from core.misc import TgKeys
 from core.state_machines import SharedMenu
 from core.state_machines.clearing import cancel_all_tokens
+from core.state_machines.fields import ADDING_VIDEO_TOKEN, ADDING_IMAGE_TOKEN
 from core.text import exit_visit_text, adding_name_text, adding_social_media_text, adding_service_text, adding_photo_text, face_info_text, \
-    created_visit_text, add_image_text, add_service_text, add_social_media_text, add_name_text, cancel_previous_processing, add_phone_number_text, \
+    created_visit_text, add_image_text, add_service_text, add_social_media_text, add_name_text, add_phone_number_text, \
     add_video_text
 from core.text.admin_alerts import adding_phone_number_text, adding_video_text
 
@@ -262,28 +262,12 @@ async def add_visit_service(msg: types.Message, state: FSMContext):
 
 # /start -> 'check_face' -> face found -> 'add_visit' -> 'add_images'
 @shared_changer_router.message(SharedMenu.ADD_VISIT_IMAGES, F.content_type == ContentType.DOCUMENT)
-async def add_visit_images(msg: types.Message, state: FSMContext):
+@handler_with_token(token_name=ADDING_IMAGE_TOKEN)
+async def add_visit_images(msg: types.Message, state: FSMContext, token_canceled: TokenCancelCheck):
     """ Add visit images """
 
-    state_data = await state.get_data()
-    add_image_token: CancellationToken = state_data.get('add_image_token')
-
-    # Add image is still processing
-    if add_image_token is not None:
-        if not add_image_token.completed:
-            await change_msg(
-                msg.answer(cancel_previous_processing(), reply_markup=cancel_keyboard('Отменить'), parse_mode=ParseMode.MARKDOWN_V2),
-                state
-            )
-            return
-        else:
-            await cancel_all_tokens(state)
-
-    add_image_token = CancellationToken()
-    await state.update_data(add_image_token=add_image_token)  # set token to not None
-
-    image_path, message = await download_document(msg, state, add_image_token, additional_text='Загрузка изображения на фото хостинг 🔗')
-    if add_image_token.completed or image_path is None:
+    image_path, message = await download_document(msg, state, token_canceled, additional_text='Загрузка изображения на фото хостинг 🔗')
+    if image_path is None or await token_canceled():
         return
 
     state_data = await state.get_data()
@@ -301,9 +285,6 @@ async def add_visit_images(msg: types.Message, state: FSMContext):
         )
         return
 
-    add_image_token.complete()
-    await state.update_data(add_image_token=add_image_token)
-
     await message.edit_text('Фотография загружена\!\n'
                             'Отправьте ещё или нажмите назад\.',
                             reply_markup=cancel_keyboard('Назад'), parse_mode=ParseMode.MARKDOWN_V2)
@@ -311,28 +292,13 @@ async def add_visit_images(msg: types.Message, state: FSMContext):
 
 # /start -> 'check_face' -> face found -> 'add_visit' -> 'add_videos'
 @shared_changer_router.message(SharedMenu.ADD_VISIT_VIDEOS, F.content_type == ContentType.VIDEO)
-async def add_visit_videos(msg: types.Message, state: FSMContext):
+@handler_with_token(token_name=ADDING_VIDEO_TOKEN)
+async def add_visit_videos(msg: types.Message, state: FSMContext, token_canceled: TokenCancelCheck):
     """ Add visit videos """
 
-    state_data = await state.get_data()
-    add_video_token: CancellationToken = state_data.get('add_video_token')
+    video_path, message = await download_video(msg, state, token_canceled, additional_text='Загрузка видео в облако 🔗')
 
-    # Add image is still processing
-    if add_video_token is not None:
-        if not add_video_token.completed:
-            await change_msg(
-                msg.answer(cancel_previous_processing(), reply_markup=cancel_keyboard('Отменить'), parse_mode=ParseMode.MARKDOWN_V2),
-                state
-            )
-            return
-        else:
-            await cancel_all_tokens(state)
-
-    add_video_token = CancellationToken()
-    await state.update_data(add_video_token=add_video_token)  # set token to not None
-
-    video_path, message = await download_video(msg, state, add_video_token, additional_text='Загрузка видео в облако 🔗')
-    if add_video_token.completed or video_path is None:
+    if video_path is None or await token_canceled():
         return
 
     state_data = await state.get_data()
@@ -349,9 +315,6 @@ async def add_visit_videos(msg: types.Message, state: FSMContext):
             state
         )
         return
-
-    add_video_token.complete()
-    await state.update_data(add_video_token=add_video_token)
 
     await message.edit_text('Видео загружается\!\n'
                             'Отправьте ещё или нажмите назад\.',
