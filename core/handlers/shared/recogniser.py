@@ -8,7 +8,7 @@ from core.callback_factory import PaginatorFactory
 from core.database.methods.client import load_clients_profile_images, create_client, get_client
 from core.database.methods.user import check_if_admin, check_if_moderator
 from core.handlers.shared import show_client, show_clients_choosing, notify_admins
-from core.handlers.utils import download_image, find_faces, change_msg, handler_with_token, TokenCancelCheck
+from core.handlers.utils import download_document, find_faces, change_msg, handler_with_token, TokenCancelCheck
 from core.keyboards.inline import cancel_keyboard, yes_no_cancel, add_visit_kb, admin_start_menu, moderator_start_menu, anyone_start_menu
 from core.misc import TgKeys
 from core.state_machines import SharedMenu, AdminMenu, ModeratorMenu, AnyoneMenu
@@ -44,7 +44,7 @@ async def check_face(msg: types.Message, state: FSMContext, token_canceled: Toke
         return await msg2admins.reply(text, parse_mode=ParseMode.MARKDOWN_V2)
 
     # Download image from the message
-    image_path, message = await download_image(msg, state, token_canceled, additional_text='Поиск лица на фотографии\. 🔎')
+    image_path, message = await download_document(msg, state, token_canceled, additional_text='Поиск лица на фотографии\. 🔎')
 
     if image_path is None or await token_canceled():
         return

@@ -63,13 +63,19 @@ def handler_with_token(token_name: str):
     return decorator
 
 
-async def download_document(msg: types.Message, state: FSMContext,
-                            supported_types: dict[str, str],
-                            token_canceled: TokenCancelCheck) -> tuple[Path | None, types.Message]:
-    """ Download the document from the msg. Cancellation token for stop downloading. Editable message for alarm if it can't be downloaded """
+async def download_media(msg: types.Message, state: FSMContext,
+                         media: types.Video | types.Document,
+                         supported_types: dict[str, str],
+                         token_canceled: TokenCancelCheck) -> tuple[Path | None, types.Message]:
+    """
+        Download the document from the msg.
+        Cancellation token for stop downloading.
+        Editable message for alarm if it can't be downloaded.
+        Media parameter must have the following attributes: mime_type, file_unique_id, file_id
+    """
 
     # Unsupported file type
-    if msg.document.mime_type not in supported_types.keys():
+    if media.mime_type not in supported_types.keys():
         message = await change_msg(
             msg.reply('Файл неподдерживаемого формата\! 😩',
                       reply_markup=cancel_keyboard('Назад'), parse_mode=ParseMode.MARKDOWN_V2),
@@ -84,14 +90,14 @@ async def download_document(msg: types.Message, state: FSMContext,
 
     TEMP_DIR.mkdir(exist_ok=True)  # Create temporary directory
 
-    filename = msg.document.file_unique_id + supported_types[msg.document.mime_type]
+    filename = media.file_unique_id + supported_types[media.mime_type]
     document_path = TEMP_DIR / filename
 
     if await token_canceled():
         return None, message
 
     # Download image
-    await msg.bot.download(msg.document, document_path)
+    await msg.bot.download(media, document_path)
 
     # Check if the file is downloaded
     if not document_path.exists():
@@ -108,8 +114,8 @@ async def download_document(msg: types.Message, state: FSMContext,
     return document_path, message
 
 
-async def download_image(msg: types.Message, state: FSMContext, token_canceled: TokenCancelCheck,
-                         *, additional_text=None, success_keyboard=cancel_keyboard()) -> tuple[Path | None, types.Message]:
+async def download_document(msg: types.Message, state: FSMContext, token_canceled: TokenCancelCheck,
+                            *, additional_text=None, success_keyboard=cancel_keyboard()) -> tuple[Path | None, types.Message]:
     """
         Download the document from msg to TEMP_DIR, check if it is an image and validate its resolution.
         Returns a path to image and editable message.
@@ -124,7 +130,7 @@ async def download_image(msg: types.Message, state: FSMContext, token_canceled: 
         )
         return None, message
 
-    document_path, message = await download_document(msg, state, SUPPORTED_IMAGE_TYPES, token_canceled)
+    document_path, message = await download_media(msg, state, msg.document, SUPPORTED_IMAGE_TYPES, token_canceled)
 
     # Check image resolution
     try:
@@ -185,7 +191,7 @@ async def download_video(msg: types.Message, state: FSMContext, token_canceled: 
         )
         return None, message
 
-    document_path, message = await download_document(msg, state, SUPPORTED_VIDEO_TYPES, token_canceled)
+    document_path, message = await download_media(msg, state, msg.video, SUPPORTED_VIDEO_TYPES, token_canceled)
 
     text = file_downloaded()
     if additional_text is not None:

@@ -5,7 +5,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import FSInputFile
 
 from core.database.methods.image import get_image_by_id
-from core.handlers.utils import download_image, find_faces, change_msg, handler_with_token, TokenCancelCheck
+from core.handlers.utils import download_document, find_faces, change_msg, handler_with_token, TokenCancelCheck
 from core.keyboards.inline import anyone_start_menu, cancel_keyboard
 from core.state_machines import AnyoneMenu
 from core.state_machines.clearing import clear_all_in_one
@@ -47,7 +47,7 @@ async def check_if_exist_face(msg: types.Message, state: FSMContext, token_cance
     """ Validate and download the provided file. Find a face on it and check if it exists in db. """
 
     # Download image from the message
-    image_path, message = await download_image(msg, state, token_canceled, additional_text='Поиск лица на фотографии\. 🔎')
+    image_path, message = await download_document(msg, state, token_canceled, additional_text='Поиск лица на фотографии\. 🔎')
 
     if image_path is None or await token_canceled():
         return

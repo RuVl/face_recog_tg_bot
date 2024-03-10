@@ -17,7 +17,7 @@ from core.database.methods.visit import create_visit, update_visit_name, update_
 from core.database.methods.visit.update import update_visit_phone_number
 from core.handlers.shared import show_client
 from core.handlers.shared.recogniser import return2start_menu
-from core.handlers.utils import change_msg, download_image, download_video
+from core.handlers.utils import change_msg, download_document, download_video
 from core.keyboards.inline import add_visit_info_kb, cancel_keyboard, add_visit_kb, yes_no_cancel
 from core.misc import TgKeys
 from core.state_machines import SharedMenu
@@ -282,7 +282,7 @@ async def add_visit_images(msg: types.Message, state: FSMContext):
     add_image_token = CancellationToken()
     await state.update_data(add_image_token=add_image_token)  # set token to not None
 
-    image_path, message = await download_image(msg, state, add_image_token, additional_text='Загрузка изображения на фото хостинг 🔗')
+    image_path, message = await download_document(msg, state, add_image_token, additional_text='Загрузка изображения на фото хостинг 🔗')
     if add_image_token.completed or image_path is None:
         return
 
@@ -310,7 +310,7 @@ async def add_visit_images(msg: types.Message, state: FSMContext):
 
 
 # /start -> 'check_face' -> face found -> 'add_visit' -> 'add_videos'
-@shared_changer_router.message(SharedMenu.ADD_VISIT_VIDEOS, F.content_type == ContentType.DOCUMENT)
+@shared_changer_router.message(SharedMenu.ADD_VISIT_VIDEOS, F.content_type == ContentType.VIDEO)
 async def add_visit_videos(msg: types.Message, state: FSMContext):
     """ Add visit videos """
 
