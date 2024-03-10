@@ -1,5 +1,6 @@
 import logging
 import shutil
+import traceback
 from pathlib import Path
 
 import yadisk
@@ -37,6 +38,7 @@ async def upload_file(file_path: str | Path, dir2copy: str | Path, base_name: st
             await client.upload(str(new_path.absolute()), upload_path)
         except YaDiskError as e:
             logging.error(e)
+            traceback.print_exception(type(e), e, e.__traceback__)
 
             if not await client.exists(upload_path):
                 return None, new_path
