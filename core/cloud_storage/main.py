@@ -22,7 +22,7 @@ async def upload_file(file_path: str | Path, dir2copy: str | Path, base_name: st
     new_path = get_available_filepath(dir2copy, base_name, file_path.suffix)
     shutil.move(file_path, new_path, shutil.copy2)
 
-    logging.info(f"Sending image {file_path} to photo hosting")
+    logging.info(f"Sending file {file_path} to cloud storage")
     async with yadisk.AsyncClient(CloudStorageKeys.API_TOKEN, session='aiohttp') as client:
         if not await client.exists(CLOUD_FOLDER):
             await client.mkdir(CLOUD_FOLDER)
@@ -34,7 +34,7 @@ async def upload_file(file_path: str | Path, dir2copy: str | Path, base_name: st
             upload_path = f'{CLOUD_FOLDER}/{new_path.stem}_{i}'
 
         try:
-            await client.upload(str(new_path), upload_path)
+            await client.upload(str(new_path.absolute()), upload_path)
         except YaDiskError as e:
             logging.error(e)
 

@@ -310,7 +310,7 @@ async def add_visit_videos(msg: types.Message, state: FSMContext, token_canceled
     except Exception as e:
         logging.error(str(e))
         await change_msg(
-            msg.reply('Что\-то пошло не так\! 😟\n\n' + add_image_text(),
+            msg.reply('Что\-то пошло не так\! 😟\n\n' + add_video_text(),
                       reply_markup=cancel_keyboard('Назад'), parse_mode=ParseMode.MARKDOWN_V2),
             state
         )

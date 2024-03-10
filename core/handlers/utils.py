@@ -99,7 +99,7 @@ async def download_media(msg: types.Message, state: FSMContext,
     if await token_canceled():
         return None, message
 
-    # Download image
+    # Download media
     await msg.bot.download(media, document_path)
 
     # Check if the file is downloaded
@@ -109,7 +109,7 @@ async def download_media(msg: types.Message, state: FSMContext,
                                           reply_markup=cancel_keyboard('Назад'), parse_mode=ParseMode.MARKDOWN_V2)
         return None, message
 
-        # Check if the task canceled
+    # Check if the task canceled
     if await token_canceled():
         document_path.unlink(missing_ok=True)
         return None, message
@@ -194,7 +194,7 @@ async def download_video(msg: types.Message, state: FSMContext, token_canceled: 
         )
         return None, message
 
-    document_path, message = await download_media(msg, state, msg.video, SUPPORTED_VIDEO_TYPES, token_canceled)
+    video_path, message = await download_media(msg, state, msg.video, SUPPORTED_VIDEO_TYPES, token_canceled)
 
     text = file_downloaded()
     if additional_text is not None:
@@ -202,7 +202,7 @@ async def download_video(msg: types.Message, state: FSMContext, token_canceled: 
 
     await message.edit_text(text, reply_markup=success_keyboard, parse_mode=ParseMode.MARKDOWN_V2)
 
-    return document_path, message
+    return video_path, message
 
 
 async def find_faces(image_path: Path, msg: types.Message, token_canceled: TokenCancelCheck) -> tuple[list[Client] | None, dict | None]:
