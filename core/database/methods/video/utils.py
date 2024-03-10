@@ -37,6 +37,7 @@ async def _send_video2cloud(video_id: str | int, path: str | Path):
 
     logging.info(f"Cutting video's ({video_id}) public_url...")
     url = await cut_url(cloud_obj.public_url)
+    path = str(new_path.absolute())
 
     logging.info(f'Updating {video_id} record...')
-    await update_video_fields(video_id, path=new_path, cloud_data=cloud_data, url=url)
+    await update_video_fields(video_id, path=path, cloud_data=cloud_data, url=url)
