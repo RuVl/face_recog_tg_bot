@@ -50,3 +50,15 @@ def get_available_filepath(directory: Path | str, base_name: str, extension: str
         if not (directory / filename).exists():
             return directory / filename
         index += 1
+
+
+def prepare_path(path: str | Path) -> Path:
+    """ Check if the path is valid and exists """
+
+    if isinstance(path, str):
+        path = Path(path)
+
+    if not path.exists():
+        raise FileNotFoundError()
+
+    return path

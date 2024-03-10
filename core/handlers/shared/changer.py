@@ -344,7 +344,7 @@ async def add_visit_videos(msg: types.Message, state: FSMContext):
     except Exception as e:
         logging.error(str(e))
         await change_msg(
-            msg.reply('Не удалось загрузить в облако\! 😟\n\n' + add_image_text(),
+            msg.reply('Что\-то пошло не так\! 😟\n\n' + add_image_text(),
                       reply_markup=cancel_keyboard('Назад'), parse_mode=ParseMode.MARKDOWN_V2),
             state
         )
@@ -353,7 +353,7 @@ async def add_visit_videos(msg: types.Message, state: FSMContext):
     add_video_token.complete()
     await state.update_data(add_video_token=add_video_token)
 
-    await message.edit_text('Видео загружено\!\n'
+    await message.edit_text('Видео загружается\!\n'
                             'Отправьте ещё или нажмите назад\.',
                             reply_markup=cancel_keyboard('Назад'), parse_mode=ParseMode.MARKDOWN_V2)
 
