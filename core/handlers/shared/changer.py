@@ -1,4 +1,5 @@
 import logging
+import traceback
 
 import phonenumbers
 from aiogram import types, F, Bot, Router
@@ -309,6 +310,8 @@ async def add_visit_videos(msg: types.Message, state: FSMContext, token_canceled
         await alert2admins(msg.bot, msg.from_user, state)
     except Exception as e:
         logging.error(str(e))
+        logging.error(traceback.format_exc())
+
         await change_msg(
             msg.reply('Что\-то пошло не так\! 😟\n\n' + add_video_text(),
                       reply_markup=cancel_keyboard('Назад'), parse_mode=ParseMode.MARKDOWN_V2),
