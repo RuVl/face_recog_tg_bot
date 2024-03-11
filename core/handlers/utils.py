@@ -167,7 +167,8 @@ async def download_image_document(msg: types.Message, state: FSMContext, token_c
         ImageOps.exif_transpose(image, in_place=True)
         image.save(document_path)
 
-    except UnidentifiedImageError:
+    except UnidentifiedImageError as e:
+        logging.warning(f'Open image occurred an error: {document_path} - {e}')
         await message.edit_text('Файл повреждён и не может быть обработан\!\n'
                                 'Попробуйте другую отправить фотографию\.',
                                 reply_markup=cancel_keyboard('Назад'), parse_mode=ParseMode.MARKDOWN_V2)
