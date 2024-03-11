@@ -21,8 +21,11 @@ from core.keyboards.inline import cancel_keyboard
 from core.state_machines.clearing import clear_all_in_one, cancel_token, complete_token
 from core.state_machines.fields import LAST_MESSAGE_FIELD
 from core.text import file_downloaded
+from pillow_heif import register_heif_opener
+
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
+register_heif_opener()
 
 TokenCancelCheck = Callable[[], Awaitable[bool]]
 
