@@ -22,7 +22,7 @@ class TGEncoder(json.JSONEncoder):
         elif (_type := type(o).__name__) in types.__all__:
             return {
                 "_type": f'aiogram.{_type}',
-                "_value": o.__dict__
+                "_value": {k: v for k, v in o.__dict__.items() if v is not None}
             }
         elif isinstance(o, datetime):
             return {
@@ -32,10 +32,10 @@ class TGEncoder(json.JSONEncoder):
         elif isinstance(o, CancellationToken):
             return {
                 "_type": "CancellationToken",
-                "_value": {attr: getattr(o, attr) for attr in o.__slots__}
+                "_value": {k: v for k in o.__slots__ if (v := getattr(o, k)) is not None}
             }
         elif (_type := type(o).__name__) in models.__all__:
-            _value = o.__dict__
+            _value = {k: v for k, v in o.__dict__.items() if v is not None}
             _value.pop('_sa_instance_state')
             return {
                 "_type": f'models.{_type}',
