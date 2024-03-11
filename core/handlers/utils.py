@@ -169,6 +169,7 @@ async def download_image_document(msg: types.Message, state: FSMContext, token_c
         # Transpose image by exif data
         ImageOps.exif_transpose(image, in_place=True)
         image.save(document_path)
+        image.close()
 
     except UnidentifiedImageError as e:
         logging.warning(f'Open image occurred an error: {document_path} - {e}')
@@ -231,7 +232,11 @@ async def find_faces(image_path: Path, msg: types.Message, token_canceled: Token
         If no matches are found, it returns None, np.ndarray.
     """
 
-    embeddings = DeepFace.represent(str(image_path), model_name=MODEL, detector_backend=BACKEND, enforce_detection=False)
+    img = Image.open(image_path)
+    np_img = np.array(img)
+    img.close()
+
+    embeddings = DeepFace.represent(np_img, model_name=MODEL, detector_backend=BACKEND, enforce_detection=False)
 
     if await token_canceled():
         return None, None
