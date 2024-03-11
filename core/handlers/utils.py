@@ -78,7 +78,10 @@ async def download_media(msg: types.Message, state: FSMContext,
     """
 
     # Unsupported file type
-    if media.mime_type not in supported_types.keys():
+    mime_type = media.mime_type.lower()
+
+    if mime_type not in supported_types.keys():
+        logging.warning(f'Not supported media type: {mime_type} not in {supported_types.keys()}')
         message = await change_msg(
             msg.reply('Файл неподдерживаемого формата\! 😩',
                       reply_markup=cancel_keyboard('Назад'), parse_mode=ParseMode.MARKDOWN_V2),
@@ -93,7 +96,7 @@ async def download_media(msg: types.Message, state: FSMContext,
 
     TEMP_DIR.mkdir(exist_ok=True)  # Create temporary directory
 
-    filename = media.file_unique_id + supported_types[media.mime_type]
+    filename = media.file_unique_id + supported_types[mime_type]
     document_path = TEMP_DIR / filename
 
     if await token_canceled():
