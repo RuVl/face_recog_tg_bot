@@ -16,7 +16,7 @@ from core.database.methods.visit import create_visit, update_visit_name, update_
 from core.database.methods.visit.update import update_visit_phone_number
 from core.handlers.shared import show_client
 from core.handlers.shared.recogniser import return2start_menu
-from core.handlers.utils import change_msg, download_document, download_video, handler_with_token, TokenCancelCheck
+from core.handlers.utils import change_msg, download_image_document, download_video, handler_with_token, TokenCancelCheck
 from core.keyboards.inline import add_visit_info_kb, cancel_keyboard, add_visit_kb, yes_no_cancel
 from core.misc import TgKeys
 from core.state_machines import SharedMenu
@@ -268,7 +268,7 @@ async def add_visit_service(msg: types.Message, state: FSMContext):
 async def add_visit_images(msg: types.Message, state: FSMContext, token_canceled: TokenCancelCheck):
     """ Add visit images """
 
-    image_path, message = await download_document(msg, state, token_canceled, additional_text='Загрузка изображения на фото хостинг 🔗')
+    image_path, message = await download_image_document(msg, state, token_canceled, additional_text='Загрузка изображения на фото хостинг 🔗')
     if image_path is None or await token_canceled():
         return
 

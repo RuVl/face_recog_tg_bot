@@ -78,10 +78,17 @@ async def download_media(msg: types.Message, state: FSMContext,
     """
 
     # Unsupported file type
-    mime_type = media.mime_type.lower()
 
-    if mime_type not in supported_types.keys():
-        logging.warning(f'Not supported media type: {mime_type} not in {supported_types.keys()}')
+    file_suffix = None
+    if media.mime_type is not None:
+        file_suffix = supported_types.get(media.mime_type.lower())
+    else:
+        file_name = Path(media.file_name)
+        if file_name.suffix and file_name.suffix.lower() in supported_types.values():
+            file_suffix = file_name.suffix.lower()
+
+    if file_suffix is None:
+        logging.warning(f'Not supported media type: {media.mime_type} | {media.file_name}')
         message = await change_msg(
             msg.reply('Файл неподдерживаемого формата\! 😩',
                       reply_markup=cancel_keyboard('Назад'), parse_mode=ParseMode.MARKDOWN_V2),
@@ -96,7 +103,7 @@ async def download_media(msg: types.Message, state: FSMContext,
 
     TEMP_DIR.mkdir(exist_ok=True)  # Create temporary directory
 
-    filename = media.file_unique_id + supported_types[mime_type]
+    filename = media.file_unique_id + file_suffix
     document_path = TEMP_DIR / filename
 
     if await token_canceled():
@@ -120,8 +127,8 @@ async def download_media(msg: types.Message, state: FSMContext,
     return document_path, message
 
 
-async def download_document(msg: types.Message, state: FSMContext, token_canceled: TokenCancelCheck,
-                            *, additional_text=None, success_keyboard=cancel_keyboard()) -> tuple[Path | None, types.Message]:
+async def download_image_document(msg: types.Message, state: FSMContext, token_canceled: TokenCancelCheck,
+                                  *, additional_text=None, success_keyboard=cancel_keyboard()) -> tuple[Path | None, types.Message]:
     """
         Download the document from msg to TEMP_DIR, check if it is an image and validate its resolution.
         Returns a path to image and editable message.
