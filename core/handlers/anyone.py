@@ -9,7 +9,7 @@ from core.handlers.utils import download_image_document, find_faces, change_msg,
 from core.keyboards.inline import anyone_start_menu, cancel_keyboard
 from core.state_machines import AnyoneMenu
 from core.state_machines.clearing import clear_all_in_one
-from core.state_machines.fields import CHECK_FACE_TOKEN
+from core.state_machines.fields import CHECK_FACE_TOKEN, TEMP_PATH_FIELD
 from core.text import send_me_image
 
 anyone_router = Router()
@@ -52,7 +52,7 @@ async def check_if_exist_face(msg: types.Message, state: FSMContext, token_cance
     if image_path is None or await token_canceled():
         return
 
-    await state.update_data(temp_image_path=image_path)
+    await state.update_data({TEMP_PATH_FIELD: image_path})
 
     clients, encoding = await find_faces(image_path, message, token_canceled)
 

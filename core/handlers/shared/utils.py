@@ -16,6 +16,7 @@ from core.keyboards.inline.shared import select_clients_kb
 from core.misc import TgKeys
 from core.state_machines import SharedMenu
 from core.state_machines.clearing import clear_gallery
+from core.state_machines.fields import TEMP_PATH_FIELD
 from core.text import face_info_text
 from core.text.utils import escape_markdown_v2
 
@@ -55,9 +56,9 @@ async def show_client(msg: types.Message, state: FSMContext,
     except TelegramBadRequest as e:
         logging.warning(f'Cannot send image {e.message}')
 
-        images_str = [escape_markdown_v2(img.path) for img in client_images]
+        images_str = ', '.join([f'`{img.path}`' for img in client_images])
         await msg.bot.send_message(TgKeys.ADMIN_GROUP_ID,
-                                   f'Произошла ошибка при отправке фотографии `{images_str}` клиента `{client_id}`\!\n' +
+                                   f'Произошла ошибка при отправке фотографии {images_str} клиента `{client_id}`\!\n' +
                                    escape_markdown_v2('Лимиты телеграмм: https://core.telegram.org/bots/api#sending-files'),
                                    parse_mode=ParseMode.MARKDOWN_V2)
         await change_msg(
@@ -152,7 +153,7 @@ async def notify_admins(callback: types.CallbackQuery, state: FSMContext, **kwar
         case SharedMenu.NOT_CHOSEN:
             client_id = kwargs.get('client_id')
 
-            face_path_temp = state_data.get('temp_image_path')
+            face_path_temp = state_data.get(TEMP_PATH_FIELD)
             clients: list[Client] = state_data.get('possible_clients')
 
             if isinstance(clients, list) and 0 < len(clients) <= 10:
@@ -171,6 +172,6 @@ async def notify_admins(callback: types.CallbackQuery, state: FSMContext, **kwar
                 await safe_send_photo(face_path_temp, f'{user_str} создал нового клиента `{client_id}` при выборе:\n{all_clients_str}')
 
         case SharedMenu.NOT_FOUND:
-            face_path_temp = state_data.get('temp_image_path')
+            face_path_temp = state_data.get(TEMP_PATH_FIELD)
             await safe_send_photo(face_path_temp, f'Такое лицо не было найдено в базе данных\n'
                                                   f'{user_str} добавил такое лицо в базу данных')

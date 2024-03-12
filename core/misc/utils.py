@@ -33,7 +33,7 @@ def get_storage(*,
     )
 
 
-def get_available_filepath(directory: Path | str, base_name: str, extension: str):
+def get_available_filepath(directory: Path | str, base_name: str, extension: str) -> Path:
     extension = extension.removeprefix('.')
     directory = Path(directory)
 

@@ -4,12 +4,18 @@ from pathlib import Path
 from typing import Any
 
 import aiohttp
+from PIL import Image, ImageFile
+from pillow_heif import register_heif_opener
 from aiohttp.web_exceptions import HTTPException
 
 from core.image_hosting.config import API_URL
 from core.image_hosting.utils import parse_response
 from core.misc import ImHostKeys
 from core.misc.utils import get_available_filepath, prepare_path
+
+
+register_heif_opener()
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 
 async def send_image(path: str | Path, dir2copy: str | Path, base_name: str = None) -> tuple[dict[str, Any], Path]:
@@ -20,9 +26,16 @@ async def send_image(path: str | Path, dir2copy: str | Path, base_name: str = No
     if base_name is None:
         base_name = path.stem[-5:]
 
-    new_path = get_available_filepath(dir2copy, base_name, path.suffix)
+    new_path = get_available_filepath(dir2copy, base_name, '.jpg')
 
-    shutil.copy2(path, new_path)
+    # Copy image to media folder
+    if path.suffix != '.jpg':
+        img = Image.open(path)
+        img.save(new_path)
+        img.close()
+        path.unlink(missing_ok=True)
+    else:
+        shutil.move(path, new_path, shutil.copy2)
 
     params = dict(key=ImHostKeys.API_TOKEN)
     post_data = aiohttp.FormData()

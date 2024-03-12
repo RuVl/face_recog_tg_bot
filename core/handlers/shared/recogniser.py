@@ -13,7 +13,7 @@ from core.keyboards.inline import cancel_keyboard, yes_no_cancel, add_visit_kb, 
 from core.misc import TgKeys
 from core.state_machines import SharedMenu, AdminMenu, ModeratorMenu, AnyoneMenu
 from core.state_machines.clearing import clear_all_in_one, clear_gallery
-from core.state_machines.fields import CHECK_FACE_TOKEN
+from core.state_machines.fields import CHECK_FACE_TOKEN, TEMP_PATH_FIELD
 from core.text import face_info_text
 from core.text.admin import hi_admin_text
 from core.text.moderator import hi_moderator_text
@@ -49,7 +49,7 @@ async def check_face(msg: types.Message, state: FSMContext, token_canceled: Toke
     if image_path is None or await token_canceled():
         return
 
-    await state.update_data(temp_image_path=image_path)
+    await state.update_data({TEMP_PATH_FIELD: image_path})
 
     # Find face on image and compare with faces in db
     clients, encoding = await find_faces(image_path, message, token_canceled)
@@ -123,7 +123,7 @@ async def return2start_menu(callback: types.CallbackQuery, state: FSMContext):
     await callback.answer()
     await change_msg(
         callback.message.answer(text, reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN_V2),
-        state, clear_state=True
+        state
     )
     await state.set_state(new_state)
 
@@ -144,7 +144,7 @@ async def add_new_client(callback: types.CallbackQuery, state: FSMContext):
 
             await state.update_data(creating_client=True)
 
-            face_path_temp = state_data.get('temp_image_path')
+            face_path_temp = state_data.get(TEMP_PATH_FIELD)
             face_encoding = state_data.get('face_encoding')
 
             client = await create_client(face_path_temp, face_encoding)
