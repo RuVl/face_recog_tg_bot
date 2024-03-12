@@ -105,6 +105,7 @@ async def show_clients_choosing(msg: types.Message, state: FSMContext,
                     parse_mode=ParseMode.MARKDOWN_V2
                 ) for client in clients2show
             ])
+            await state.update_data(face_gallery_msg=media_msg)
         except TelegramBadRequest as e:
             logging.warning(f'Cannot send image {e.message}')
 
@@ -129,8 +130,6 @@ async def show_clients_choosing(msg: types.Message, state: FSMContext,
         state
     )
 
-    await state.update_data(face_gallery_msg=media_msg)
-
 
 async def notify_admins(callback: types.CallbackQuery, state: FSMContext, **kwargs):
     """ Send notification to admin chat according to the current state """
@@ -138,7 +137,7 @@ async def notify_admins(callback: types.CallbackQuery, state: FSMContext, **kwar
     state_data = await state.get_data()
 
     username = callback.from_user.username.strip() or 'пользователь'
-    user_str = f'[{username}](tg://user?id={callback.from_user.id})'
+    user_str = f'[{escape_markdown_v2(username)}](tg://user?id={callback.from_user.id})'
 
     # Check if the path exists and send the message or photo
     async def safe_send_photo(path, caption):
