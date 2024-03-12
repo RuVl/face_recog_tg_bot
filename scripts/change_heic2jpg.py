@@ -18,6 +18,9 @@ async def change_heic2jpg():
         query = select(models.Image).where(models.Image.path.endswith('.heic'))
         result = await session.scalars(query)
 
+        old_paths = []
+        new_paths = []
+
         for image in tqdm(result.all()):
             path = Path(image.path)
             new_path = get_available_filepath(MEDIA_DIR, path.stem, '.jpg')
@@ -26,6 +29,18 @@ async def change_heic2jpg():
             img.save(new_path)
             img.close()
 
-            image.path = new_path
+            image.path = str(new_path.absolute())
 
-        await session.commit()
+            old_paths.append(path)
+            new_paths.append(new_path)
+
+        try:
+            await session.commit()
+        except Exception as e:
+            for p in new_paths:
+                p.unlink(missing_ok=True)
+
+            raise e
+
+        for p in old_paths:
+            p.unlink(missing_ok=True)
