@@ -21,20 +21,20 @@ async def change_heic2jpg():
         old_paths = []
         new_paths = []
 
-        for image in tqdm(result.all()):
-            path = Path(image.path)
-            new_path = get_available_filepath(MEDIA_DIR, path.stem, '.jpg')
-
-            img = Image.open(path)
-            img.save(new_path)
-            img.close()
-
-            image.path = str(new_path.absolute())
-
-            old_paths.append(path)
-            new_paths.append(new_path)
-
         try:
+            for image in tqdm(result.all()):
+                path = Path(image.path)
+                new_path = get_available_filepath(MEDIA_DIR, path.stem, '.jpg')
+
+                img = Image.open(path)
+                img.save(new_path)
+                img.close()
+
+                image.path = str(new_path.absolute())
+
+                old_paths.append(path)
+                new_paths.append(new_path)
+
             await session.commit()
         except Exception as e:
             for p in new_paths:

@@ -129,7 +129,7 @@ async def add_moderator_location(callback: types.CallbackQuery, state: FSMContex
         await callback.message.edit_text(add_moderator_text(moderator_id, 'введите'), reply_markup=add_location(), parse_mode=ParseMode.MARKDOWN_V2)
         return
 
-    location_id, location_address = callback.data.split('-')
+    location_id, location_address = callback.data.split('-', 1)
     location = await get_location(int(location_id))
 
     if location.address != location_address:
@@ -200,7 +200,7 @@ async def moderators_list(callback: types.CallbackQuery, state: FSMContext):
         await callback.message.edit_text(admin_menu_text(), reply_markup=admin_menu(), parse_mode=ParseMode.MARKDOWN_V2)
         return
 
-    mod_id, mod_tg_id = callback.data.split('-')
+    mod_id, mod_tg_id = callback.data.split('-', 1)
 
     moderator = await get_moderator_with_location(mod_tg_id)
     if moderator is None or str(moderator.id) != mod_id:
@@ -264,7 +264,7 @@ async def moderator_change_location(callback: types.CallbackQuery, state: FSMCon
             reply_markup=add_location(), parse_mode=ParseMode.MARKDOWN_V2)
         return
 
-    loc_id, loc_address = callback.data.split('-')
+    loc_id, loc_address = callback.data.split('-', 1)
     await change_location(mod_tg_id, loc_id)
     await callback.answer('Изменено')
 
