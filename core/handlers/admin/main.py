@@ -6,14 +6,13 @@ from aiogram.fsm.context import FSMContext
 from core.filters import IsAdminMessageFilter, IsAdminCallbackFilter
 from core.handlers.admin.menu import admin_menu_router
 from core.handlers.shared import SHARED_CALLBACK_COMMANDS
-from core.handlers.shared.recogniser import shared_recognizer_router
 from core.handlers.utils import change_msg
 from core.keyboards.inline import admin_start_menu, admin_menu
 from core.state_machines import AdminMenu
 from core.text.admin import admin_menu_text, hi_admin_text
 
 admin_router = Router()
-admin_router.include_routers(admin_menu_router, shared_recognizer_router)
+admin_router.include_routers(admin_menu_router)
 
 # Filters
 admin_router.message.filter(

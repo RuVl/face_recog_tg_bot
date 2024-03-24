@@ -11,13 +11,14 @@ from core.database.methods.client import get_client, get_client_by_phone
 from core.filters import IsAdminOrModeratorMessageFilter, IsAdminOrModeratorCallbackFilter
 from core.handlers.shared import show_client
 from core.handlers.shared.changer import shared_changer_router
+from core.handlers.shared.recogniser import shared_recognizer_router
 from core.handlers.utils import change_msg
 from core.keyboards.inline import cancel_keyboard, add_visit_kb
 from core.state_machines import AdminMenu, ModeratorMenu, SharedMenu
 from core.text import send_me_image
 
 admin_moderator_router = Router()
-admin_moderator_router.include_routers(shared_changer_router)
+admin_moderator_router.include_routers(shared_recognizer_router, shared_changer_router)
 
 admin_moderator_router.message.filter(
     F.chat.type == 'private',
