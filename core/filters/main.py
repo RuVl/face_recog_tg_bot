@@ -17,7 +17,11 @@ class IsModeratorMessageFilter(BaseFilter):
 
 class IsModeratorCallbackFilter(BaseFilter):
     async def __call__(self, callback: types.CallbackQuery) -> bool | dict[str, Any]:
-        return await check_if_moderator(callback.from_user.id)
+        if not await check_if_moderator(callback.from_user.id):
+            await callback.answer('Отказано в доступе!')
+            return False
+
+        return True
 
 
 class IsAdminMessageFilter(BaseFilter):
@@ -31,7 +35,11 @@ class IsAdminMessageFilter(BaseFilter):
 
 class IsAdminCallbackFilter(BaseFilter):
     async def __call__(self, callback: types.CallbackQuery) -> bool | dict[str, Any]:
-        return await check_if_admin(callback.from_user.id)
+        if not await check_if_admin(callback.from_user.id):
+            await callback.answer('Отказано в доступе!')
+            return False
+
+        return True
 
 
 class IsAdminOrModeratorMessageFilter(BaseFilter):
@@ -45,4 +53,8 @@ class IsAdminOrModeratorMessageFilter(BaseFilter):
 
 class IsAdminOrModeratorCallbackFilter(BaseFilter):
     async def __call__(self, callback: types.CallbackQuery) -> bool | dict[str, Any]:
-        return await check_if_moderator_or_admin(callback.from_user.id)
+        if not await check_if_moderator_or_admin(callback.from_user.id):
+            await callback.answer('Отказано в доступе!')
+            return False
+
+        return True
