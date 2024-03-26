@@ -146,18 +146,17 @@ async def notify_admins(callback: types.CallbackQuery, state: FSMContext, **kwar
             await bot.send_photo(TgKeys.ADMIN_GROUP_ID, photo=FSInputFile(path),
                                  caption=caption, parse_mode=ParseMode.MARKDOWN_V2)
         else:
-            await bot.send_message(TgKeys.ADMIN_GROUP_ID, f'`фото не найдено`' + caption,
+            await bot.send_message(TgKeys.ADMIN_GROUP_ID, f'`фото не найдено` ' + caption,
                                    parse_mode=ParseMode.MARKDOWN_V2)
 
     match await state.get_state():
         case SharedMenu.NOT_CHOSEN:
-            client_id = kwargs.get('client_id')
-
-            face_path_temp = state_data.get(TEMP_PATH_FIELD)
+            client: Client = kwargs.get('client')
+            face_path_temp = client.profile_picture.path or state_data.get(TEMP_PATH_FIELD)
             clients: list[Client] = state_data.get('possible_clients')
 
             if isinstance(clients, list) and 0 < len(clients) <= 10:
-                await safe_send_photo(face_path_temp, f"{user_str} создал нового клиента `{client_id}` при выборе:")
+                await safe_send_photo(face_path_temp, f"{user_str} создал нового клиента `{client.id}` при выборе:")
 
                 await bot.send_media_group(
                     TgKeys.ADMIN_GROUP_ID,
@@ -169,9 +168,10 @@ async def notify_admins(callback: types.CallbackQuery, state: FSMContext, **kwar
                 )
             else:
                 all_clients_str = ('`' + '`, `'.join([clients]) + '`') if clients else 'данные не сохранились'
-                await safe_send_photo(face_path_temp, f'{user_str} создал нового клиента `{client_id}` при выборе:\n{all_clients_str}')
+                await safe_send_photo(face_path_temp, f'{user_str} создал нового клиента `{client.id}` при выборе:\n{all_clients_str}')
 
         case SharedMenu.NOT_FOUND:
-            face_path_temp = state_data.get(TEMP_PATH_FIELD)
+            client: Client = kwargs.get('client')
+            face_path_temp = client.profile_picture.path or state_data.get(TEMP_PATH_FIELD)
             await safe_send_photo(face_path_temp, f'Такое лицо не было найдено в базе данных\n'
                                                   f'{user_str} добавил такое лицо в базу данных')

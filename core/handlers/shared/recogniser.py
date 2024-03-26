@@ -149,7 +149,7 @@ async def add_new_client(callback: types.CallbackQuery, state: FSMContext):
 
             client = await create_client(face_path_temp, face_encoding)
 
-            await notify_admins(callback, state, client_id=client.id)
+            await notify_admins(callback, state, client=client)
 
             await state.set_state(SharedMenu.SHOW_FACE_INFO)
             await callback.answer('Клиент добавлен в базу данных!')
