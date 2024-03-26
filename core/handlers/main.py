@@ -12,7 +12,7 @@ def register_all_handlers(dp: Dispatcher) -> None:
 
     throttling_middleware = ThrottlingMiddleware()
     main_router.callback_query.outer_middleware(throttling_middleware)
-    main_router.shutdown.register(throttling_middleware.close)
+    main_router.shutdown.register(throttling_middleware.close)  # Close storage
 
     main_router.callback_query.outer_middleware(DropEmptyButtonMiddleware())
 
