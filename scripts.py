@@ -1,8 +1,8 @@
 import asyncio
 
-from scripts.change_heic2jpg import change_heic2jpg
+from scripts.fill_database import fill_database
 
 if __name__ == '__main__':
-    # asyncio.run(fill_database())
+    asyncio.run(fill_database())
     # asyncio.run(fix_exif())
-    asyncio.run(change_heic2jpg())
+    # asyncio.run(change_heic2jpg())
