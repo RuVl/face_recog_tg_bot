@@ -1,0 +1,81 @@
+syntax = "proto3";
+
+// --- Enums ---
+enum Model {
+  MODEL_UNSPECIFIED = 0;
+  MODEL_ARCFACE = 1;
+  MODEL_VGGFACE = 2;
+  MODEL_FACENET512 = 3;
+}
+
+enum Backend {
+  
+  BACKEND_UNSPECIFIED = 0;
+  BACKEND_RETINAFACE = 1;
+  BACKEND_OPENCV = 2;
+  BACKEND_DLIB = 3;
+}
+
+enum Metric {
+  METRIC_UNSPECIFIED = 0;
+  METRIC_COSINE = 1;
+  METRIC_EUCLIDEAN = 2;
+  METRIC_EUCLIDEAN_L2 = 3;
+}
+
+// --- Service ---
+service FaceRecognizerService {
+  rpc GenerateEmbeddings (stream GenerateEmbeddingsRequest) returns (GenerateEmbeddingsResponse);
+  rpc CompareAgainstKnown (CompareAgainstKnownRequest) returns (CompareAgainstKnownResponse);
+  rpc AddKnownEmbedding (AddKnownEmbeddingRequest) returns (AddKnownEmbeddingResponse);
+}
+
+// --- Embedding Generation ---
+message GenerateEmbeddingsRequest {
+  oneof payload {
+    ImageInfo info = 1;
+    bytes image_chunk = 2;
+  }
+}
+
+message ImageInfo {
+  Model model = 1;
+  Backend backend = 2;
+}
+
+message FaceEmbedding {
+  string id = 1;
+  repeated float vector = 2;
+  float face_confidence = 3;
+}
+
+message GenerateEmbeddingsResponse {
+  repeated FaceEmbedding faces = 1;
+}
+
+// --- Embedding Comparison ---
+message CompareAgainstKnownRequest {
+  FaceEmbedding target_embedding = 1;
+  repeated string known_embedding_ids = 2;
+  Metric metric = 3;
+}
+
+message ComparisonResult {
+  string known_embedding_id = 1;
+  float score = 2;
+  bool is_match = 3;
+}
+
+message CompareAgainstKnownResponse {
+  repeated ComparisonResult results = 1;
+}
+
+// --- Embedding Storage ---
+message AddKnownEmbeddingRequest {
+  FaceEmbedding embedding = 1;
+  string person_name = 2;
+}
+
+message AddKnownEmbeddingResponse {
+  string id = 1;
+}

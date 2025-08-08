@@ -1,0 +1,3 @@
+tqdm==4.67.1
+deepface==0.0.95
+PyExifTool==0.5.6
