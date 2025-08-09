@@ -1,6 +1,6 @@
 from aiogram import Dispatcher, types
 
-from core import bot
+from core.bots import bot
 from core.handlers import register_all_handlers
 from core.misc.utils import get_storage
 

@@ -5,7 +5,7 @@ from typing import Any
 
 from aiogram import types
 
-from core import bot
+from core.bots import bot
 from core.cancel_token import CancellationToken
 from core.database import models
 

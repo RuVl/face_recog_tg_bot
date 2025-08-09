@@ -1,12 +1,9 @@
-from typing import TYPE_CHECKING, Optional
+from typing import Optional
 
-from sqlalchemy import Column, JSON, String, Integer, ForeignKey
+from sqlalchemy import Column, ForeignKey, Integer, JSON, String
 from sqlalchemy.orm import Mapped, relationship
 
 from core.database.models import Base
-
-if TYPE_CHECKING:
-	pass
 
 
 class Image(Base):

@@ -1,6 +1,0 @@
-venv/
-
-.env.dist
-
-face_pb2.py
-face_pb2_grpc.py

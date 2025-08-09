@@ -1,12 +1,7 @@
-from typing import TYPE_CHECKING
-
-from sqlalchemy import Column, Integer, String, JSON, ForeignKey
+from sqlalchemy import Column, ForeignKey, Integer, JSON, String
 from sqlalchemy.orm import Mapped, relationship
 
 from core.database.models import Base
-
-if TYPE_CHECKING:
-	pass
 
 
 class Video(Base):

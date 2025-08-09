@@ -1,8 +1,10 @@
-FROM python:3.11.13-slim
-LABEL authors="RuVl"
+FROM nvidia/cuda:12.9.1-runtime-ubuntu22.04
 
-# Update packages
-RUN apt-get update && apt-get upgrade -y
+LABEL maintainer="RuVl"
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends python3 python3-pip ffmpeg libsm6 libxext6 && \
+    rm -rf /var/lib/apt/lists/*
 
 # Set enviroment variables
 ENV TZ="Europe/Moscow"
@@ -15,10 +17,10 @@ WORKDIR /usr/src/app
 
 # Copy and install requirements
 COPY ./requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt --break-system-packages
+RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir tensorflow[and-cuda]==2.19.0
 
 # Copy project to directory
 COPY . ./
-RUN python3 -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. ./face.proto
 
 ENTRYPOINT ["python3", "run.py"]

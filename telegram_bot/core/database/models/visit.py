@@ -1,16 +1,12 @@
 from datetime import datetime
-from typing import TYPE_CHECKING
 
 from phonenumbers import PhoneNumber
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, relationship
 from sqlalchemy_utils import PhoneNumberType
 
 from core.config import PHONE_NUMBER_REGION
 from . import Base
-
-if TYPE_CHECKING:
-	pass
 
 
 class Visit(Base):
@@ -32,8 +28,8 @@ class Visit(Base):
 
 	services: Mapped[list['Service']] = relationship('Service', back_populates='visit', passive_deletes=True)
 
-	location_id: Mapped[int] = Column(ForeignKey('locations.id'), nullable=False)
+	location_id: Mapped[int] = Column(ForeignKey('locations.id', ondelete='RESTRICT'), nullable=False)
 	location: Mapped['Location'] = relationship('Location')
 
-	client_id: Mapped[int] = Column(ForeignKey('clients.id', ondelete='SET NULL'), nullable=False)
+	client_id: Mapped[int] = Column(ForeignKey('clients.id', ondelete='CASCADE'), nullable=False)
 	client: Mapped['Client'] = relationship('Client', back_populates='visits', passive_deletes=True)

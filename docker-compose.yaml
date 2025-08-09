@@ -11,22 +11,26 @@ volumes:
     name: facebot-postgres
 
 services:
-  face-recognizer:
-    container_name: face-recognizer
+  telegram-bot:
+    container_name: facebot
     build:
-      context: ./face_recognizer
-      # If you use gpu - make sure if nvidia-container-toolkit installed
-      dockerfile: Dockerfile.gpu
+      context: ./telegram_bot
+      dockerfile: Dockerfile
     runtime: nvidia
     restart: unless-stopped
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=compute,utility
-    hostname: face-recognizer
+    env_file:
+      - telegram_bot/.env
+      - postgres/.env
+      - redis/.env
     networks:
       - facebot-net
-    expose:
-      - 50051
+    volumes:
+      - ./telegram_bot/media:/usr/src/app/media
+    depends_on:
+      - postgres
     deploy:
       resources:
         reservations:
@@ -34,25 +38,6 @@ services:
             - driver: nvidia
               count: all
               capabilities: [gpu]
-  
-  telegram-bot:
-    container_name: facebot
-    build:
-      context: ./telegram_bot
-      dockerfile: Dockerfile
-    restart: unless-stopped
-    env_file:
-      - telegram_bot/.env
-      - postgres/.env
-      - redis/.env
-      - face_recognizer/.env
-    networks:
-      - facebot-net
-    volumes:
-      - ./telegram_bot/media:/usr/src/app/media
-    depends_on:
-      - postgres
-      - face-recognizer
 
   postgres:
     image: postgres:17.5

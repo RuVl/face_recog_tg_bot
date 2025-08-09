@@ -14,6 +14,10 @@ SUPPORTED_VIDEO_TYPES = {
 	'video/mp4': '.mp4'
 }
 
+MODEL = 'Facenet512'
+BACKEND = 'retinaface'
+DISTANCE_METRIC = 'cosine'
+
 if not MEDIA_DIR.exists():
 	MEDIA_DIR.mkdir()
 

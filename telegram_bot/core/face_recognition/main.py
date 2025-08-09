@@ -1,63 +1,56 @@
 import logging
 from pathlib import Path
 
+from PIL import Image
 from aiogram import types
 from aiogram.enums import ParseMode
-import grpc
 import numpy as np
+from deepface import DeepFace
+from deepface.modules import verification as dst
 
+from core.config import BACKEND, DISTANCE_METRIC, MODEL
 from core.database.methods.client import get_all_clients
 from core.database.models import Client
+from core.handlers.utils import TokenCancelCheck
 from core.keyboards.inline import cancel_keyboard
-import face_pb2
-import face_pb2_grpc
-from core.env import RecognizerKeys
 
 
 def find_faces(image_path: Path) -> list[dict]:
-	channel = grpc.insecure_channel(RecognizerKeys.URL)
-	stub = face_pb2_grpc.FaceRecognizerServiceStub(channel)
+	img = Image.open(image_path)
+	np_img = np.array(img)
+	img.close()
 
-	model = face_pb2.Model.MODEL_FACENET512
-	backend = face_pb2.Backend.BACKEND_RETINAFACE
+	embeddings = DeepFace.represent(np_img, model_name=MODEL, detector_backend=BACKEND, enforce_detection=False)
+	return list(filter(lambda e: e['face_confidence'] > .75, embeddings))
 
-	def image_chunks():
-		yield face_pb2.GenerateEmbeddingsRequest(
-			info=face_pb2.ImageInfo(model=model, backend=backend)
+
+def get_distance(distance_metric, embedding1, embedding2) -> int:
+	if distance_metric == "cosine":
+		return dst.find_cosine_distance(embedding1, embedding2)
+	elif distance_metric == "euclidean":
+		return dst.find_euclidean_distance(embedding1, embedding2)
+	elif distance_metric == "euclidean_l2":
+		return dst.find_euclidean_distance(
+			dst.l2_normalize(embedding1), dst.l2_normalize(embedding2)
 		)
-		with open(image_path, "rb") as f:
-			while chunk := f.read(4096):
-				yield face_pb2.GenerateEmbeddingsRequest(image_chunk=chunk)
-
-	response = stub.GenerateEmbeddings(image_chunks())
-
-	return [
-		{
-			"embedding": list(f.vector),
-			"face_confidence": f.face_confidence,
-			"id": f.id
-		} for f in response.faces
-	]
+	else:
+		raise ValueError("Invalid distance_metric passed - ", distance_metric)
 
 
 def compare_faces(known_faces: list[dict], face2compare: dict) -> list[bool]:
-	channel = grpc.insecure_channel(RecognizerKeys.URL)
-	stub = face_pb2_grpc.FaceRecognizerServiceStub(channel)
+	"""
+		:param known_faces: list of known face encodings
+		:param face2compare: face encoding to find similar faces
+	"""
+	threshold = dst.find_threshold(MODEL, DISTANCE_METRIC)
 
-	metric = face_pb2.Metric.METRIC_COSINE
-
-	request = face_pb2.CompareAgainstKnownRequest(
-		target_embedding=face_pb2.FaceEmbedding(
-			vector=face2compare["embedding"]
-		),
-		known_embedding_ids=[f["id"] for f in known_faces],
-		metric=metric
-	)
-	response = stub.CompareAgainstKnown(request)
-	return [r.is_match for r in response.results]
+	return [
+		get_distance(DISTANCE_METRIC, face['embedding'], face2compare['embedding']) < threshold
+		for face in known_faces
+	]
 
 
-async def find_faces_with_match(image_path: Path, msg: types.Message, token_canceled) -> tuple[list[Client] | None, dict | None]:
+async def find_faces_with_match(image_path: Path, msg: types.Message, token_canceled: TokenCancelCheck) -> tuple[list[Client] | None, dict | None]:
 	try:
 		embeddings = find_faces(image_path)
 	except Exception as e:
@@ -69,8 +62,6 @@ async def find_faces_with_match(image_path: Path, msg: types.Message, token_canc
 
 	if await token_canceled():
 		return None, None
-
-	embeddings = list(filter(lambda e: e['face_confidence'] > .75, embeddings))
 
 	if len(embeddings) > 1:
 		await msg.edit_text(f'Обнаружено {len(embeddings)} лиц\!\n'

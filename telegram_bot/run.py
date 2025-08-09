@@ -1,7 +1,7 @@
 import asyncio
 import logging
 
-from core import start_bot
+from core.main import start_bot
 
 if __name__ == '__main__':
 	logging.basicConfig(level=logging.INFO)

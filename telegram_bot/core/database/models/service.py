@@ -1,13 +1,9 @@
 from datetime import datetime
-from typing import TYPE_CHECKING
 
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, relationship
 
 from . import Base
-
-if TYPE_CHECKING:
-	pass
 
 
 class Service(Base):
@@ -22,5 +18,5 @@ class Service(Base):
 	title: Mapped[str] = Column(String(255))
 	date: Mapped[datetime] = Column(DateTime, default=datetime.utcnow)
 
-	visit_id: Mapped[int] = Column(ForeignKey('visits.id', ondelete='SET NULL'))
+	visit_id: Mapped[int] = Column(ForeignKey('visits.id', ondelete='CASCADE'))
 	visit: Mapped['Visit'] = relationship('Visit', back_populates='services', passive_deletes=True)

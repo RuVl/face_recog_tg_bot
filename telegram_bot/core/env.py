@@ -5,15 +5,8 @@ from typing import Final
 
 class TgKeys:
 	TOKEN: Final[str] = environ.get('TG_API_TOKEN')
-	ADMIN_GROUP_ID: Final[int] = int(environ.get('ADMIN_GROUP_ID'))
-	MEDIA_DIR: Final[Path] = Path(environ.get('MEDIA_DIR'))
-
-
-class RecognizerKeys:
-	HOST: Final[str] = environ.get('RECOGNIZER_HOST')
-	PORT: Final[int] = environ.get('RECOGNIZER_PORT')
-
-	URL: Final[str] = f'{HOST}:{PORT}'
+	ADMIN_GROUP_ID: Final[int] = int(environ.get('ADMIN_GROUP_ID', 0))
+	MEDIA_DIR: Final[Path] = Path(environ.get('MEDIA_DIR', 'media'))
 
 
 class PostgresKeys:

@@ -7,7 +7,6 @@ from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
 from aiogram.types import FSInputFile, InputMediaPhoto
 
-from core import bot
 from core.database.methods.image import get_client_images
 from core.database.models import Client, Image
 from core.handlers.utils import change_msg
@@ -132,22 +131,22 @@ async def show_clients_choosing(msg: types.Message, state: FSMContext,
 	)
 
 
-async def notify_admins(callback: types.CallbackQuery, state: FSMContext, **kwargs):
+async def notify_admins(clb: types.CallbackQuery, state: FSMContext, **kwargs):
 	""" Send notification to admin chat according to the current state """
 
 	state_data = await state.get_data()
 
-	username = callback.from_user.username.strip() or 'пользователь'
-	user_str = f'[{escape_markdown_v2(username)}](tg://user?id={callback.from_user.id})'
+	username = clb.from_user.username.strip() or 'пользователь'
+	user_str = f'[{escape_markdown_v2(username)}](tg://user?id={clb.from_user.id})'
 
 	# Check if the path exists and send the message or photo
 	async def safe_send_photo(path, caption):
 		if path and Path(path).exists():
-			await bot.send_photo(TgKeys.ADMIN_GROUP_ID, photo=FSInputFile(path),
-			                     caption=caption, parse_mode=ParseMode.MARKDOWN_V2)
+			await clb.bot.send_photo(TgKeys.ADMIN_GROUP_ID, photo=FSInputFile(path),
+			                         caption=caption, parse_mode=ParseMode.MARKDOWN_V2)
 		else:
-			await bot.send_message(TgKeys.ADMIN_GROUP_ID, f'`фото не найдено` ' + caption,
-			                       parse_mode=ParseMode.MARKDOWN_V2)
+			await clb.bot.send_message(TgKeys.ADMIN_GROUP_ID, f'`фото не найдено` ' + caption,
+			                           parse_mode=ParseMode.MARKDOWN_V2)
 
 	match await state.get_state():
 		case SharedMenu.NOT_CHOSEN:
@@ -158,7 +157,7 @@ async def notify_admins(callback: types.CallbackQuery, state: FSMContext, **kwar
 			if isinstance(clients, list) and 0 < len(clients) <= 10:
 				await safe_send_photo(face_path_temp, f"{user_str} создал нового клиента `{client.id}` при выборе:")
 
-				await bot.send_media_group(
+				await clb.bot.send_media_group(
 					TgKeys.ADMIN_GROUP_ID,
 					media=[InputMediaPhoto(
 						media=FSInputFile(client.profile_picture.path),
