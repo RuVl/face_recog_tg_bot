@@ -1,0 +1,11 @@
+.env.dist
+
+scripts/
+tests/
+venv/
+
+scripts.py
+scripts.log
+
+face_pb2.py
+face_pb2_grpc.py
