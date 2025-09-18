@@ -298,7 +298,7 @@ async def add_visit_images(msg: types.Message, state: FSMContext, token_canceled
 async def add_visit_videos(msg: types.Message, state: FSMContext, token_canceled: TokenCancelCheck):
 	""" Add visit videos """
 
-	video_path, message = await download_video(msg, state, token_canceled, additional_text='Загрузка видео в облако 🔗')
+	video_path, message = await download_video(msg, state, token_canceled, additional_text='Загрузка видео 📦')
 
 	if video_path is None or await token_canceled():
 		return

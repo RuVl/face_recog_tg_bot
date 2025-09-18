@@ -37,18 +37,26 @@ services:
           devices:
             - driver: nvidia
               count: all
-              capabilities: [gpu]
+              capabilities: [ gpu ]
 
   postgres:
-    image: postgres:17.5
+    build:
+      context: ./postgres
+      dockerfile: Dockerfile
     restart: unless-stopped
+    volumes:
+      - postgres_volume:/var/lib/postgresql/data
+      - ./postgres/backups:/var/backups/postgres
     env_file: postgres/.env
     networks:
       - facebot-net
     expose:
       - 5432
-    volumes:
-      - postgres_volume:/var/lib/postgresql/data
+    healthcheck:
+      test: pg_isready -U $$POSTGRES_USER
+      interval: 15s
+      timeout: 5s
+      retries: 3
 
   redis:
     image: redis:7.4.5

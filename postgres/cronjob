@@ -1,0 +1,1 @@
+0 0 1,10,17,28 * * /usr/local/bin/backup_postgres.sh >> /var/log/cron.log 2>&1

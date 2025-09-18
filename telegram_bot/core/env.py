@@ -30,9 +30,11 @@ class RedisKeys:
 	URL: Final[str] = f'redis://{HOST}:{PORT}/{DATABASE}'
 
 
+# No need
 class ImHostKeys:
 	API_TOKEN: Final[str] = environ.get('IM_HOST_TOKEN')
 
 
+# No need
 class CloudStorageKeys:
 	API_TOKEN: Final[str] = environ.get('CLOUD_STORAGE_TOKEN')

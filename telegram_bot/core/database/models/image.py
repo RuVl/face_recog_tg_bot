@@ -1,9 +1,13 @@
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 from sqlalchemy import Column, ForeignKey, Integer, JSON, String
 from sqlalchemy.orm import Mapped, relationship
 
 from core.database.models import Base
+
+if TYPE_CHECKING:
+	# noinspection PyUnusedImports
+	from core.database.models import Visit
 
 
 class Image(Base):
